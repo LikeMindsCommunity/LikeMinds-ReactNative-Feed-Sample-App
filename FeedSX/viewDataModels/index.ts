@@ -16,6 +16,7 @@ import {
   LINK_ATTACHMENT_TYPE,
   VIDEO_ATTACHMENT_TYPE,
 } from '../constants/Strings';
+import {IComment} from '@likeminds.community/feed-js-beta';
 
 /**
  * @param data: [GetFeedResponse]
@@ -52,6 +53,9 @@ export function convertToLMPostUI(
     isSaved: post.isSaved,
     likesCount: post.likesCount,
     menuItems: convertToLMMenuItemsUI(post.menuItems),
+    replies: post?.replies
+      ? convertToLMCommentUI(post.Id, post.replies, user)
+      : [],
     text: post.text,
     updatedAt: post.updatedAt,
     userId: post.userId,
@@ -211,8 +215,9 @@ export function convertImageVideoMetaData(
         pageCount: 0,
         url: item?.uri,
       },
-      attachmentType:
-        item?.duration ?  VIDEO_ATTACHMENT_TYPE : IMAGE_ATTACHMENT_TYPE, // You need to specify the attachment type.
+      attachmentType: item?.duration
+        ? VIDEO_ATTACHMENT_TYPE
+        : IMAGE_ATTACHMENT_TYPE, // You need to specify the attachment type.
     };
   });
   return convertedImageVideoMetaData;
@@ -274,4 +279,36 @@ export function convertLinkMetaData(data: LMOGTagsUI[]): LMAttachmentUI[] {
     };
   });
   return convertedLinkMetaData;
+}
+
+/**
+ * @param postId: string
+ * @param data: [IComment]
+ * @param user: [Map] of String to User
+ * @returns list of [LMCommentUI]
+ */
+export function convertToLMCommentUI(
+  postId: string,
+  data: IComment[],
+  user: {[key: string]: LMUserUI},
+): LMCommentUI[] {
+  return data?.map((item: IComment) => {
+    return {
+      id: item.Id,
+      postId: postId,
+      repliesCount: item.commentsCount,
+      level: item.level,
+      createdAt: item.createdAt,
+      isEdited: item.isEdited,
+      isLiked: item.isLiked,
+      likesCount: item.likesCount,
+      menuItems: convertToLMMenuItemsUI(item.menuItems),
+      text: item.text,
+      replies: item?.replies ? item.replies : [],
+      updatedAt: item.updatedAt,
+      userId: item.userId,
+      uuid: item.uuid,
+      user: convertToLMUserUI(user[item.userId]),
+    };
+  });
 }

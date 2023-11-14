@@ -65,6 +65,8 @@ export function feedReducer(state = initialState, action: any) {
       const likedPostIndex = updatedFeed.findIndex(
         (item: any) => item?.id === action.body,
       );
+      console.log('dd', updatedFeed[likedPostIndex]['isLiked']);
+      
       // this updates the isLiked value
       updatedFeed[likedPostIndex]['isLiked'] =
         !updatedFeed[likedPostIndex]['isLiked'];

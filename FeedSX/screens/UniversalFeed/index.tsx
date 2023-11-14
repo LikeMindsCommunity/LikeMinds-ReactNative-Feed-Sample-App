@@ -15,7 +15,7 @@ import {
   LikePostRequest,
   PinPostRequest,
   SavePostRequest,
-} from '@likeminds.community/feed-js';
+} from '@likeminds.community/feed-js-beta';
 import {useDispatch} from 'react-redux';
 import {
   autoPlayPostVideo,
@@ -49,6 +49,7 @@ import {
   DOCUMENT_ATTACHMENT_TYPE,
   IMAGE_ATTACHMENT_TYPE,
   PIN_POST_MENU_ITEM,
+  POST_LIKES,
   POST_PIN_SUCCESS,
   POST_SAVED_SUCCESS,
   POST_TYPE,
@@ -58,6 +59,7 @@ import {
   POST_UPLOADING,
   POST_UPLOAD_INPROGRESS,
   REPORT_POST_MENU_ITEM,
+  SOMETHING_WENT_WRONG,
   UNPIN_POST_MENU_ITEM,
   VIDEO_ATTACHMENT_TYPE,
 } from '../../constants/Strings';
@@ -65,10 +67,11 @@ import {DeleteModal, ReportModal} from '../../customModals';
 import LMLoader from '../../../LikeMinds-ReactNative-Feed-UI/src/base/LMLoader';
 import {postLikesClear} from '../../store/actions/postLikes';
 import {setUploadAttachments, addPost} from '../../store/actions/createPost';
-import {CREATE_POST, LIKES_LIST} from '../../constants/screenNames';
+import {CREATE_POST, LIKES_LIST, POST_DETAIL} from '../../constants/screenNames';
 import {uploadFilesToAWS} from '../../utils';
 import STYLES from '../../constants/Styles';
 import {showToastMessage} from '../../store/actions/toast';
+import { clearPostDetail } from '../../store/actions/postDetail';
 
 const UniversalFeed = () => {
   const dispatch = useDispatch();
@@ -97,13 +100,14 @@ const UniversalFeed = () => {
     //this line of code is for the sample app only, pass your userUniqueID instead of this.
     // todo: remove static data
     // const UUID = await AsyncStorage.getItem('userUniqueID');
-    const UUID = '';
+    const UUID = 'siddharth-1';
 
     let payload = {
       userUniqueId: UUID, // user unique ID
       userName: 'abc', // user name
       isGuest: false,
     };
+
     // calling initiateUser API
     let initiateResponse = await dispatch(initiateUser(payload) as any);
     if (!!initiateResponse) {
@@ -205,7 +209,7 @@ const UniversalFeed = () => {
       likePost(
         LikePostRequest.builder().setpostId(payload.postId).build(),
       ) as any,
-    );
+    );    
     if (postLikeResponse) {
     }
     return postLikeResponse;
@@ -216,6 +220,7 @@ const UniversalFeed = () => {
     let payload = {
       postId: id,
     };
+  try{
     dispatch(savePostStateHandler(payload.postId) as any);
     // calling the save post api
     let savePostResponse = await dispatch(
@@ -230,6 +235,15 @@ const UniversalFeed = () => {
       }) as any,
     );
     return savePostResponse;
+  }catch (error) {
+    dispatch(
+      showToastMessage({
+        isToast: true,
+        message: SOMETHING_WENT_WRONG,
+      }) as any,
+    );
+  }
+   
   }
 
   useLayoutEffect(() => {
@@ -368,7 +382,7 @@ const UniversalFeed = () => {
         <FlashList
           data={feedData}
           renderItem={({item}: {item: LMPostUI}) => (
-            <>
+            <TouchableOpacity activeOpacity={0.8} onPress={() => {dispatch(clearPostDetail() as any) ,NavigationService.navigate(POST_DETAIL, [item?.id, 'FROM_POST'])}}>
               <LMPost
                 post={item}
                 // header props
@@ -408,9 +422,15 @@ const UniversalFeed = () => {
                   likeTextButton: {
                     onTap: () => {
                       dispatch(postLikesClear() as any);
-                      NavigationService.navigate(LIKES_LIST, item?.id);
+                      NavigationService.navigate(LIKES_LIST, [POST_LIKES,item?.id]);
                     },
                   },
+                  commentButton:{
+                    onTap:() => {
+                      dispatch(clearPostDetail() as any)
+                      NavigationService.navigate(POST_DETAIL, [item?.id, 'FROM_COMMENTS'])
+                    }
+                  }
                 }}
                 mediaProps={{
                   attachments: item?.attachments ? item.attachments : [],
@@ -421,7 +441,7 @@ const UniversalFeed = () => {
                   },
                 }}
               />
-            </>
+            </TouchableOpacity>
           )}
           estimatedItemSize={500}
           onEndReachedThreshold={0.3}

@@ -23,6 +23,7 @@ export const REPLY_TYPE = 'reply';
 
 // toast messages
 export const REPORTED_SUCCESSFULLY = 'Post Reported!';
+export const COMMENT_REPORTED_SUCCESSFULLY = 'Comment Reported!';
 export const SOMETHING_WENT_WRONG = 'Something Went Wrong';
 export const REASON_FOR_DELETION_PLACEHOLDER = 'Enter the reason for reporting this post';
 
@@ -69,6 +70,7 @@ export const STORAGE_PERMISSION_ALERT_DESCRIPTION = 'App needs access to your st
 
 // toast messages 
 export const POST_DELETE = 'Post Deleted!'
+export const COMMENT_DELETE = 'Comment Deleted!'
 export const REPORT_REASON_VALIDATION = 'Please enter a reason'
 export const POST_UPLOADED = 'Your post was shared'
 export const POST_PIN_SUCCESS = 'Post pinned to top!'
@@ -79,6 +81,9 @@ export const FILE_UPLOAD_SIZE_VALIDATION = 'Files below 100 KB and above 100MB a
 export const MEDIA_UPLOAD_COUNT_VALIDATION = 'You can select upto 10 items!'
 export const POST_SAVED_SUCCESS = 'Post saved!'
 export const POST_UNSAVED_SUCCESS = 'Post unsaved!'
+
+export const POST_LIKES = 'Post likes'
+export const COMMENT_LIKES = 'Comment likes'
 
 // file size validation
 export const MAX_FILE_SIZE = 104857600; // 100MB in bytes
