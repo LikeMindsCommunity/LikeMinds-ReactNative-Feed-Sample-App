@@ -19,10 +19,14 @@ import {
   DELETE_COMMENT_STATE,
   CLEAR_COMMENT,
   CLEAR_POST,
+  CREATE_COMMENT_STATE,
+  CREATE_REPLY_SUCCESS,
+  CREATE_REPLY,
+  CREATE_REPLY_FAILED,
+  CREATE_REPLY_STATE,
 } from '../types/types';
 import {CALL_API} from '../apiMiddleware';
 import {lmFeedClient} from '../../..';
-import { SHOW_TOAST } from '../types/loader';
 
 // get post api action
 export const getPost = (payload?: any) => async (dispatch: Dispatch) => {
@@ -43,13 +47,16 @@ export const getPost = (payload?: any) => async (dispatch: Dispatch) => {
 
 // get comments api action
 export const getComments = (payload?: any) => async (dispatch: Dispatch) => {
-  console.log('pay', JSON.stringify(payload));
-  
   try {
     return await dispatch({
       type: POST_COMMENTS_SUCCESS,
       [CALL_API]: {
-        func: lmFeedClient?.getComments(payload.postId, payload, payload.commentId, payload.page),
+        func: lmFeedClient?.getComments(
+          payload.postId,
+          payload,
+          payload.commentId,
+          payload.page,
+        ),
         body: payload,
         types: [POST_COMMENTS, POST_COMMENTS_SUCCESS, POST_COMMENTS_FAILED],
         showLoader: true,
@@ -59,22 +66,20 @@ export const getComments = (payload?: any) => async (dispatch: Dispatch) => {
     Alert.alert(`${error}`);
   }
 };
-// get comments api action
+// clear comments data action
 export const clearComments = (payload?: any) => async (dispatch: Dispatch) => {
-  
   try {
     return await dispatch({
       type: CLEAR_COMMENT,
-      body: payload
+      body: payload,
     });
   } catch (error) {
     Alert.alert(`${error}`);
   }
 };
 
-// get comments api action
+// clear post detail data action
 export const clearPostDetail = () => async (dispatch: Dispatch) => {
-  
   try {
     return await dispatch({
       type: CLEAR_POST,
@@ -118,6 +123,49 @@ export const addComment = (payload?: any) => async (dispatch: Dispatch) => {
   }
 };
 
+// add comment state handler action
+export const addCommentStateHandler =
+  (payload?: any) => async (dispatch: Dispatch) => {
+    try {
+      return await dispatch({
+        type: CREATE_COMMENT_STATE,
+        body: payload,
+      });
+    } catch (error) {
+      Alert.alert(`${error}`);
+    }
+  };
+
+// add reply api action
+export const replyComment = (payload?: any) => async (dispatch: Dispatch) => {
+  try {
+    return await dispatch({
+      type: CREATE_REPLY_SUCCESS,
+      [CALL_API]: {
+        func: lmFeedClient?.replyComment(payload),
+        body: payload,
+        types: [CREATE_REPLY, CREATE_REPLY_SUCCESS, CREATE_REPLY_FAILED],
+        showLoader: true,
+      },
+    });
+  } catch (error) {
+    Alert.alert(`${error}`);
+  }
+};
+
+// add reply state handler action
+export const replyCommentStateHandler =
+  (payload?: any) => async (dispatch: Dispatch) => {
+    try {
+      return await dispatch({
+        type: CREATE_REPLY_STATE,
+        body: payload,
+      });
+    } catch (error) {
+      Alert.alert(`${error}`);
+    }
+  };
+
 // delete comment api action
 export const deleteComment = (payload?: any) => async (dispatch: Dispatch) => {
   try {
@@ -135,7 +183,7 @@ export const deleteComment = (payload?: any) => async (dispatch: Dispatch) => {
   }
 };
 
-// delete post state managing action
+// delete post state handler action
 export const deleteCommentStateHandler =
   (payload?: any) => async (dispatch: Dispatch) => {
     try {
@@ -148,4 +196,3 @@ export const deleteCommentStateHandler =
       Alert.alert(`${error}`);
     }
   };
-  

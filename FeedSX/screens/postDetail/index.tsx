@@ -1,4 +1,12 @@
-import {Alert, FlatList, SafeAreaView, ScrollView, Text, View} from 'react-native';
+import {
+  Alert,
+  FlatList,
+  Image,
+  SafeAreaView,
+  ScrollView,
+  Text,
+  View,
+} from 'react-native';
 import React, {useEffect, useState} from 'react';
 import {
   LMCommentItem,
@@ -9,10 +17,13 @@ import {
 import {useDispatch} from 'react-redux';
 import {
   addComment,
+  addCommentStateHandler,
   clearComments,
   getComments,
   getPost,
   likeComment,
+  replyComment,
+  replyCommentStateHandler,
 } from '../../store/actions/postDetail';
 import {
   AddCommentRequest,
@@ -21,6 +32,7 @@ import {
   LikeCommentRequest,
   LikePostRequest,
   PinPostRequest,
+  ReplyCommentRequest,
   SavePostRequest,
 } from '@likeminds.community/feed-js-beta';
 import {useAppSelector} from '../../store/store';
@@ -39,7 +51,9 @@ import {showToastMessage} from '../../store/actions/toast';
 import {
   COMMENT_LIKES,
   COMMENT_TYPE,
+  DELETE_COMMENT_MENU_ITEM,
   DELETE_POST_MENU_ITEM,
+  NAVIGATED_FROM_COMMENT,
   PIN_POST_MENU_ITEM,
   POST_LIKES,
   POST_PIN_SUCCESS,
@@ -47,20 +61,21 @@ import {
   POST_TYPE,
   POST_UNPIN_SUCCESS,
   POST_UNSAVED_SUCCESS,
+  REPORT_COMMENT_MENU_ITEM,
   REPORT_POST_MENU_ITEM,
   UNPIN_POST_MENU_ITEM,
 } from '../../constants/Strings';
 import {DeleteModal, ReportModal} from '../../customModals';
-import {convertToLMCommentUI} from '../../viewDataModels';
-import {FlashList} from '@shopify/flash-list';
-import Layout from '../../constants/Layout';
 import LMLoader from '../../../LikeMinds-ReactNative-Feed-UI/src/base/LMLoader';
+import {TouchableOpacity} from 'react-native-gesture-handler';
+import {styles} from './styles';
 
-const PostDetail = (props: any) => {  
+const PostDetail = (props: any) => {
   const dispatch = useDispatch();
   const [modalPosition, setModalPosition] = useState({x: 0, y: 0});
   const [showActionListModal, setShowActionListModal] = useState(false);
   const [selectedMenuItemPostId, setSelectedMenuItemPostId] = useState('');
+  const [commentToAdd, setCommentToAdd] = useState('');
   const [selectedMenuItemCommentId, setSelectedMenuItemCommentId] =
     useState('');
   const [showDeleteModal, setDeleteModal] = useState(false);
@@ -72,12 +87,23 @@ const PostDetail = (props: any) => {
     x: 0,
     y: 0,
   });
+  const loggedInUser = useAppSelector(state => state.feed.member);
   const [showCommentActionListModal, setShowCommentActionListModal] =
     useState(false);
+  const [replyOnComment, setReplyOnComment] = useState({
+    textInputFocus: false,
+    commentId: '',
+  });
+  const [replyToUsername, setReplyToUsername] = useState('');
+  const [localModalVisibility, setLocalModalVisibility] =
+  useState(showDeleteModal);
 
+  // this function closes the post action list modal
   const closePostActionListModal = () => {
     setShowActionListModal(false);
   };
+
+  // this function closes the comment action list modal
   const closeCommentActionListModal = () => {
     setShowCommentActionListModal(false);
   };
@@ -86,7 +112,7 @@ const PostDetail = (props: any) => {
   async function postLikeHandler(id: string) {
     let payload = {
       postId: id,
-    };    
+    };
     dispatch(likePostStateHandler(payload.postId) as any);
     // calling like post api
     let postLikeResponse = await dispatch(
@@ -142,17 +168,17 @@ const PostDetail = (props: any) => {
     return pinPostResponse;
   };
 
-  // this function handles the functionality on the report option
+  // this function handles the functionality on the report option of post
   const handleReportPost = async () => {
     setShowReportModal(true);
   };
 
-  // this function handles the functionality on the delete option
+  // this function handles the functionality on the delete option of post
   const handleDeletePost = async (visible: boolean) => {
     setDeleteModal(visible);
   };
 
-  // this function returns the id of the item selected from menu list and handles further functionalities accordingly
+  // this function returns the id of the item selected from menu list and handles further functionalities accordingly for post
   const onMenuItemSelect = (
     postId: string,
     itemId?: number,
@@ -171,44 +197,38 @@ const PostDetail = (props: any) => {
     }
   };
 
-  // this function handles the functionality on the report option
+  // this function handles the functionality on the report option of comment
   const handleReportComment = async () => {
     setShowReportModal(true);
   };
 
-  // this function handles the functionality on the delete option
+  // this function handles the functionality on the delete option of comment
   const handleDeleteComment = async (visible: boolean) => {
     setDeleteModal(visible);
   };
 
-  // this function returns the id of the item selected from menu list and handles further functionalities accordingly
+  // this function returns the id of the item selected from menu list and handles further functionalities accordingly for comment
   const onCommentMenuItemSelect = (commentId: string, itemId?: number) => {
     setSelectedMenuItemPostId('');
     setSelectedMenuItemCommentId(commentId);
-    if (itemId === 7) {
+    if (itemId === REPORT_COMMENT_MENU_ITEM) {
       handleReportComment();
     }
-    if (itemId === 6) {
+    if (itemId === DELETE_COMMENT_MENU_ITEM) {
       handleDeleteComment(true);
     }
   };
 
-  // this function gets the detail pf post whose menu item is clicked
+  // this function gets the detail of comment whose menu item is clicked
   const getCommentDetail = (
     comments?: LMCommentUI[],
   ): LMCommentUI | undefined => {
     if (comments) {
       for (const reply of comments) {
-        // console.log('selectedMenuItemCommentId',selectedMenuItemCommentId,reply.id);
-
         if (reply.id === selectedMenuItemCommentId) {
           return reply; // Found the reply in the current level
         }
-        // console.log('reply.replies',reply.replies);
-
         if (reply.replies && reply.replies.length > 0) {
-          // console.log('here');
-
           const nestedReply = getCommentDetail(reply.replies);
           if (nestedReply) {
             return nestedReply; // Found the reply in the child replies
@@ -216,10 +236,10 @@ const PostDetail = (props: any) => {
         }
       }
     }
-
-    return undefined; // Reply not found in the current branch
+    return undefined; // Reply not found
   };
 
+  // this function calls the getPost api
   const getPostData = async () => {
     let getPostResponse = await dispatch(
       getPost(
@@ -233,20 +253,25 @@ const PostDetail = (props: any) => {
     return getPostResponse;
   };
 
+  // this function calls the getComments api
   const getCommentsReplies = async (
     postId: string,
     commentId: string,
     repliesResponseCallback: any,
-    pageNo: number
-  ) => {    
-    let commentsRepliesResponse = await dispatch(getComments(GetCommentRequest.builder()
-    .setpostId(postId)
-    .setcommentId(commentId)
-    .setpage(pageNo)
-    .setpageSize(10)
-    .build()) as any);
-    
+    pageNo: number,
+  ) => {
+    let commentsRepliesResponse = await dispatch(
+      getComments(
+        GetCommentRequest.builder()
+          .setpostId(postId)
+          .setcommentId(commentId)
+          .setpage(pageNo)
+          .setpageSize(10)
+          .build(),
+      ) as any,
+    );
 
+    // sets the api response in the callback function
     repliesResponseCallback(
       postDetail?.replies &&
         postDetail?.replies[
@@ -256,6 +281,7 @@ const PostDetail = (props: any) => {
     return commentsRepliesResponse;
   };
 
+  // this functions hanldes the comment like functionality
   const commentLikeHandler = async (postId: string, commentId: string) => {
     let payload = {
       postId: postId,
@@ -272,33 +298,58 @@ const PostDetail = (props: any) => {
     return commentLikeResponse;
   };
 
+  // this functions calls the add new comment api
   const addNewComment = async (postId: string) => {
+    const currentDate = new Date();
     let payload = {
       postId: postId,
+      newComment: commentToAdd,
+      tempId: -currentDate.getTime(),
     };
-    let commentLikeResponse = await dispatch(
+    setCommentToAdd('');
+    dispatch(addCommentStateHandler({payload, loggedInUser}) as any);
+    let commentAddResponse = await dispatch(
       addComment(
         AddCommentRequest.builder()
           .setpostId(payload.postId)
-          .settext('good')
+          .settext(payload.newComment)
+          .setTempId(`${payload.tempId}`)
           .build(),
       ) as any,
     );
-    return commentLikeResponse;
+    return commentAddResponse;
   };
 
+  // this functions calls the add new reply to a comment api
+  const addNewReply = async (postId: string, commentId: string) => {
+    const currentDate = new Date();
+    let payload = {
+      postId: postId,
+      newComment: commentToAdd,
+      tempId: -currentDate.getTime(),
+      commentId: commentId,
+    };
+    setCommentToAdd('');
+    dispatch(replyCommentStateHandler({payload, loggedInUser}) as any);
+    let replyAddResponse = await dispatch(
+      replyComment(
+        ReplyCommentRequest.builder()
+          .setPostId(payload.postId)
+          .setCommentId(payload.commentId)
+          .setTempId(`${payload.tempId}`)
+          .setText(payload.newComment)
+          .build(),
+      ) as any,
+    );
+    return replyAddResponse;
+  };
+
+  // this useEffect handles the pagination of the comments
   useEffect(() => {
     getPostData();
   }, [commentPageNumber]);
 
-  const [localModalVisibility, setLocalModalVisibility] =
-    useState(showDeleteModal);
-
-  // Update localModalVisibility when modalVisibility changes
-  useEffect(() => {
-    setLocalModalVisibility(showDeleteModal);
-  }, [showDeleteModal]);
-
+  // this renders the postDetail view
   const renderPostDetail = () => {
     return (
       <LMPost
@@ -358,150 +409,200 @@ const PostDetail = (props: any) => {
         }}
       />
     );
-  };  
+  };
 
-
+  // Update localModalVisibility when showDeleteModal visibility changes
+  useEffect(() => {
+    setLocalModalVisibility(showDeleteModal);
+  }, [showDeleteModal]);
 
   return (
     <SafeAreaView style={{flex: 1}}>
+      {/* header view */}
       <LMHeader
         showBackArrow
         heading="Post"
-        subHeading={postDetail?.id ?
-          postDetail?.commentsCount > 1
-            ? `${postDetail?.commentsCount} comments`
-            : `${postDetail?.commentsCount} comment` : ''
+        subHeading={
+          postDetail?.id
+            ? postDetail?.commentsCount > 1
+              ? `${postDetail?.commentsCount} comments`
+              : `${postDetail?.commentsCount} comment`
+            : ''
         }
         onBackPress={() => NavigationService.navigate(UNIVERSAL_FEED)}
       />
-      {postDetail?.id ? <>{postDetail?.commentsCount > 0 ?  <View
-            style={{
-              height: '100%',
-              paddingBottom: Layout.window.height / 6.2,
-            }}>
-            <FlatList
-              ListHeaderComponent={() => {
-                return (
+
+      {/* post detail view */}
+      {postDetail?.id ? (
+        <>
+          {/* this renders when the post has commentsCount greater than 0 */}
+          {postDetail?.commentsCount > 0 ? (
+            <View style={styles.mainContainer}>
+              <FlatList
+                ListHeaderComponent={
+                  // this renders the post section
                   <>
                     {renderPostDetail()}
-                    <Text
-                      style={{
-                        paddingHorizontal: 15,
-                        paddingTop: 20,
-                        paddingBottom: 5,
-                        fontWeight: '500',
-                        color: '#222020',
-                        backgroundColor: '#fff'
-                      }}>
+                    <Text style={styles.commentCountText}>
                       {postDetail.commentsCount > 1
                         ? `${postDetail.commentsCount} Comments`
                         : `${postDetail.commentsCount} Comment`}
                     </Text>
                   </>
-                );
-              }}
-              // estimatedItemSize={150}
-              data={postDetail?.replies}
-              renderItem={({item}) => {
-                return (
-                  <>
-                    {item && (
-                      <LMCommentItem
-                        comment={item}
-                        onTapReplies={repliesResponseCallback =>
-                          { dispatch(clearComments(item?.id) as any)
-
+                }
+                data={postDetail?.replies}
+                renderItem={({item}) => {
+                  // this renders the comments section
+                  return (
+                    <>
+                      {item && (
+                        <LMCommentItem
+                          comment={item}
+                          // this calls the getCommentsReplies function on click of number of child replies text
+                          onTapReplies={repliesResponseCallback => {
+                            dispatch(clearComments(item?.id) as any);
                             getCommentsReplies(
-                            item?.postId,
-                            item?.id,
-                            repliesResponseCallback,
-                            1
-                          )}
-                        }
-                        onTapViewMore={(val:any, repliesResponseCallback)=>  {setReplyPageNumber(val);  getCommentsReplies(
-                          item?.postId,
-                          item?.id,
-                          repliesResponseCallback,
-                          val
-                        )} }
-                        viewMoreRepliesProps={{text:'', textStyle:{color:'#484F67', fontWeight:'500', marginVertical:24}}}
-                        commentMenu={{
-                          postId: item?.id,
-                          menuItems: item?.menuItems,
-                          modalPosition: modalPositionComment,
-                          modalVisible: showCommentActionListModal,
-                          onCloseModal: closeCommentActionListModal,
-                          onSelected: (commentId, itemId) =>
-                            onCommentMenuItemSelect(commentId, itemId),
-                        }}
-                        likeIconButton={{
-                          onTap: id => {
-                            commentLikeHandler(item?.postId, id);
-                          },
-                        }}
-                        likeTextButton={{
-                          onTap: id =>
-                            NavigationService.navigate(LIKES_LIST, [
-                              COMMENT_LIKES,
-                              id,
                               item?.postId,
-                            ]),
-                        }}
-                      />
-                    )}
-                  </>
-                );
-              }}
-              onEndReachedThreshold={0.3}
-              onEndReached={() => {
-                setCommentPageNumber(commentPageNumber + 1);
-              }}
-            />
-          </View> : <ScrollView>{renderPostDetail()}
-            <View style={{alignItems: 'center', marginTop: 10, paddingBottom: Layout.window.height / 6.2,}}>
-              <Text
-                style={{color: '#0F1E3D66', fontSize: 16, fontWeight: '500'}}>
-                No comment found
-              </Text>
-              <Text style={{color: '#0F1E3D66'}}>
-                Be the first one to comment
-              </Text>
-            </View></ScrollView>
-          }</> : <View
-          style={{
-            flex: 1,
-            justifyContent: 'center',
-            marginBottom: 30,
-          }}>
+                              item?.id,
+                              repliesResponseCallback,
+                              1,
+                            );
+                          }}
+                          // this handles the pagination of child replies on click of view more
+                          onTapViewMore={(
+                            val: any,
+                            repliesResponseCallback,
+                          ) => {
+                            setReplyPageNumber(val);
+                            getCommentsReplies(
+                              item?.postId,
+                              item?.id,
+                              repliesResponseCallback,
+                              val,
+                            );
+                          }}
+                          // this hanldes the functionality on click of reply text to add reply to an comment
+                          replyTextProps={{
+                            onTap: () => {
+                              setReplyOnComment({
+                                textInputFocus: true,
+                                commentId: item?.id,
+                              });
+                              setReplyToUsername(item?.user?.name);
+                            },
+                          }}
+                          // view more text style
+                          viewMoreRepliesProps={{
+                            text: '',
+                            textStyle: styles.viewMoreText,
+                          }}
+                          // comment menu item props
+                          commentMenu={{
+                            postId: item?.id,
+                            menuItems: item?.menuItems,
+                            modalPosition: modalPositionComment,
+                            modalVisible: showCommentActionListModal,
+                            onCloseModal: closeCommentActionListModal,
+                            onSelected: (commentId, itemId) =>
+                              onCommentMenuItemSelect(commentId, itemId),
+                          }}
+                          // this executes on click of like icon of comment
+                          likeIconButton={{
+                            onTap: id => {
+                              commentLikeHandler(item?.postId, id);
+                            },
+                          }}
+                          // this executes on click of like text of comment
+                          likeTextButton={{
+                            onTap: id =>
+                              NavigationService.navigate(LIKES_LIST, [
+                                COMMENT_LIKES,
+                                id,
+                                item?.postId,
+                              ]),
+                          }}
+                        />
+                      )}
+                    </>
+                  );
+                }}
+                onEndReachedThreshold={0.3}
+                onEndReached={() => {
+                  setCommentPageNumber(commentPageNumber + 1);
+                }}
+              />
+            </View>
+          ) : (
+            // this section renders if the post has 0 comments
+            <ScrollView>
+              {renderPostDetail()}
+              <View style={styles.noCommentSection}>
+                <Text style={styles.noCommentText}>No comment found</Text>
+                <Text style={{color: '#0F1E3D66'}}>
+                  Be the first one to comment
+                </Text>
+              </View>
+            </ScrollView>
+          )}
+        </>
+      ) : (
+        // this renders the loader until the data is fetched
+        <View style={styles.loaderView}>
           <LMLoader />
-        </View>}
-      
+        </View>
+      )}
 
+      {/* replying to username view which renders when the user is adding a reply to a comment */}
+      {replyOnComment.textInputFocus && (
+        <View style={styles.replyCommentSection}>
+          <Text style={{color: '#0F1E3D99'}}>
+            Replying to {replyToUsername}
+          </Text>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() =>
+              setReplyOnComment({
+                textInputFocus: false,
+                commentId: '',
+              })
+            }>
+            <Image
+              source={require('../../assets/images/close_icon3x.png')}
+              style={styles.crossIconStyle}
+            />
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* text input section for comment */}
       <LMInputText
-        inputTextStyle={{
-          margin: 0,
-          borderRadius: 0,
-          shadowOpacity: 0.5,
-          shadowRadius: 4,
-          elevation: 10,
-          shadowColor: '#000',
-          shadowOffset: {
-            width: 5,
-            height: 5,
-          },
-          height: 48,
-          paddingHorizontal: 15,
-          fontSize: 14,
-          color: '#222020',
-          position: 'absolute',
-          bottom: 0,
-          width: '100%',
-        }}
-        autoFocus={props.route.params[1] === 'FROM_COMMENTS' ? true : false}
+        inputTextStyle={styles.textInputStyle}
+        autoFocus={
+          props.route.params[1] === NAVIGATED_FROM_COMMENT
+            ? true
+            : replyOnComment.textInputFocus
+        }
         placeholderText="Write a comment"
         placeholderTextColor="#9B9B9B"
-        rightIcon={{type:'png', assetPath:require('../../assets/images/send_icon3x.png') }}
+        inputText={commentToAdd}
+        onType={val => setCommentToAdd(val)}
+        rightIcon={{
+          onTap: () => {
+            commentToAdd
+              ? replyOnComment.textInputFocus
+                ? addNewReply(postDetail?.id, replyOnComment.commentId)
+                : addNewComment(postDetail?.id)
+              : {};
+          },
+          icon: {
+            type: 'png',
+            assetPath: require('../../assets/images/send_icon3x.png'),
+            iconStyle: {opacity: commentToAdd ? 1 : 0.7},
+          },
+          clickDisable: commentToAdd ? false : true,
+        }}
       />
+
       {/* delete post modal */}
       {localModalVisibility && (
         <DeleteModal

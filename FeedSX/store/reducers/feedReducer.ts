@@ -4,7 +4,7 @@ import {
   UNPIN_POST_ID,
   UNPIN_THIS_POST,
 } from '../../constants/Strings';
-import { convertUniversalFeedPosts } from '../../viewDataModels';
+import {convertUniversalFeedPosts} from '../../viewDataModels';
 import {
   UNIVERSAL_FEED_SUCCESS,
   INITIATE_API_SUCCESS,
@@ -21,6 +21,8 @@ import {
   DELETE_POST_STATE,
   AUTO_PLAY_POST_VIDEO,
   CLEAR_FEED,
+  CREATE_COMMENT_SUCCESS,
+  DELETE_COMMENT_STATE,
 } from '../types/types';
 
 const initialState = {
@@ -47,7 +49,7 @@ export function feedReducer(state = initialState, action: any) {
     case UNIVERSAL_FEED_SUCCESS: {
       const {users = {}} = action.body;
       // model converter function
-      let post = convertUniversalFeedPosts(action.body)
+      let post = convertUniversalFeedPosts(action.body);
       // this handles pagination and appends new post data with previous data
       let feedData = state.feed;
       feedData = [...feedData, ...post];
@@ -65,8 +67,6 @@ export function feedReducer(state = initialState, action: any) {
       const likedPostIndex = updatedFeed.findIndex(
         (item: any) => item?.id === action.body,
       );
-      console.log('dd', updatedFeed[likedPostIndex]['isLiked']);
-      
       // this updates the isLiked value
       updatedFeed[likedPostIndex]['isLiked'] =
         !updatedFeed[likedPostIndex]['isLiked'];
@@ -152,7 +152,28 @@ export function feedReducer(state = initialState, action: any) {
       return {...state, autoPlayVideoPostId: action.body};
     }
     case CLEAR_FEED: {
-      return {...state, feed: []}
+      return {...state, feed: []};
+    }
+    case CREATE_COMMENT_SUCCESS: {
+      const {comment} = action.body;
+      let updatedFeed = state.feed;
+      // finds the post in which new comment is added in post detail and manage its comment count
+      updatedFeed.find((item: LMPostUI) => {
+        if (item.id == comment.postId) {
+          item.commentsCount = item?.commentsCount + 1;
+        }
+      });
+      return {...state};
+    }
+    case DELETE_COMMENT_STATE: {
+      let updatedFeed = state.feed;
+      // finds the post whose comment is deleted in post detail and manage its comment count
+      updatedFeed.find((item: LMPostUI) => {
+        if (item.id == action.body.postId) {
+          item.commentsCount = item?.commentsCount - 1;
+        }
+      });
+      return {...state};
     }
     default:
       return state;

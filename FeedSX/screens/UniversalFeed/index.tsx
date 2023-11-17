@@ -48,6 +48,8 @@ import {
   DELETE_POST_MENU_ITEM,
   DOCUMENT_ATTACHMENT_TYPE,
   IMAGE_ATTACHMENT_TYPE,
+  NAVIGATED_FROM_COMMENT,
+  NAVIGATED_FROM_POST,
   PIN_POST_MENU_ITEM,
   POST_LIKES,
   POST_PIN_SUCCESS,
@@ -72,6 +74,7 @@ import {uploadFilesToAWS} from '../../utils';
 import STYLES from '../../constants/Styles';
 import {showToastMessage} from '../../store/actions/toast';
 import { clearPostDetail } from '../../store/actions/postDetail';
+import { useFocusEffect } from '@react-navigation/native';
 
 const UniversalFeed = () => {
   const dispatch = useDispatch();
@@ -100,7 +103,7 @@ const UniversalFeed = () => {
     //this line of code is for the sample app only, pass your userUniqueID instead of this.
     // todo: remove static data
     // const UUID = await AsyncStorage.getItem('userUniqueID');
-    const UUID = 'siddharth-1';
+    const UUID = '0e53748a-969b-44c6-b8fa-a4c8e1eb1208';
 
     let payload = {
       userUniqueId: UUID, // user unique ID
@@ -327,6 +330,18 @@ const UniversalFeed = () => {
     );
     return postDetail;
   };
+  
+  // keyExtractor of feed list 
+  const keyExtractor = (item: LMPostUI) => {
+    const id = item?.id; 
+    const itemLiked = item?.isLiked; 
+    const itemPinned = item?.isPinned; 
+    const itemComments = item?.commentsCount; 
+    const itemSaved = item?.isSaved; 
+  
+    return `${id}${itemLiked}${itemPinned}${itemComments}${itemSaved}`;
+  };
+
   return (
     <SafeAreaView style={{height: '100%'}}>
       {/* header */}
@@ -378,12 +393,12 @@ const UniversalFeed = () => {
         </View>
       )}
       {/* posts list section */}
-      {feedData?.length > 0 ? (
+     {feedData?.length > 0 ? (
         <FlashList
           data={feedData}
           renderItem={({item}: {item: LMPostUI}) => (
-            <TouchableOpacity activeOpacity={0.8} onPress={() => {dispatch(clearPostDetail() as any) ,NavigationService.navigate(POST_DETAIL, [item?.id, 'FROM_POST'])}}>
-              <LMPost
+            <TouchableOpacity activeOpacity={0.8} onPress={() => {dispatch(clearPostDetail() as any) ,NavigationService.navigate(POST_DETAIL, [item?.id, NAVIGATED_FROM_POST])}}>
+             <LMPost
                 post={item}
                 // header props
                 headerProps={{
@@ -428,7 +443,7 @@ const UniversalFeed = () => {
                   commentButton:{
                     onTap:() => {
                       dispatch(clearPostDetail() as any)
-                      NavigationService.navigate(POST_DETAIL, [item?.id, 'FROM_COMMENTS'])
+                      NavigationService.navigate(POST_DETAIL, [item?.id, NAVIGATED_FROM_COMMENT])
                     }
                   }
                 }}
@@ -443,6 +458,7 @@ const UniversalFeed = () => {
               />
             </TouchableOpacity>
           )}
+          keyExtractor={(item) => keyExtractor(item)}
           estimatedItemSize={500}
           onEndReachedThreshold={0.3}
           onEndReached={() => {

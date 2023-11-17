@@ -1,4 +1,3 @@
-import {Alert} from 'react-native';
 import {
   PIN_POST_ID,
   PIN_THIS_POST,
@@ -10,9 +9,11 @@ import {
   CLEAR_COMMENT,
   CLEAR_POST,
   COMMENT_DELETE_SUCCESS,
+  CREATE_COMMENT_STATE,
+  CREATE_COMMENT_SUCCESS,
+  CREATE_REPLY_STATE,
+  CREATE_REPLY_SUCCESS,
   DELETE_COMMENT_STATE,
-  LIKE_POST_STATE,
-  LIKE_POST_SUCCESS,
   PIN_POST_STATE,
   PIN_POST_SUCCESS,
   POST_COMMENTS_SUCCESS,
@@ -27,39 +28,58 @@ export function postDetailReducer(state = initialState, action: any) {
   switch (action.type) {
     case POST_DATA_SUCCESS: {
       const {post = {}, users = {}} = action.body;
-      let updated = state.postDetail;
+      let updatedPostDetail = state.postDetail;
       let converterPostData = convertToLMPostUI(post, users);
-      let newReplies = converterPostData.replies || []; // Use an empty array if replies is undefined
-
-      newReplies = [...(updated.replies || []), ...newReplies];
+      let newReplies = converterPostData.replies || [];
+      // filter out the replies already present in postDetail
+      newReplies = newReplies.filter(
+        newReply =>
+          !updatedPostDetail.replies || // Check if replies in postDetail exist
+          !updatedPostDetail.replies.some(
+            existingReply => existingReply.id === newReply.id,
+          ),
+      );
+      // combines all the replies (handling pagination)
+      let allMergedReplies = [
+        ...(updatedPostDetail.replies || []),
+        ...newReplies,
+      ];
 
       return {
         ...state,
-        postDetail: {...converterPostData, replies: newReplies},
+        postDetail: {...converterPostData, replies: allMergedReplies},
       };
     }
     case POST_COMMENTS_SUCCESS: {
+      const {comment, users} = action.body;
       let updatedDetail = state.postDetail;
       updatedDetail?.replies &&
-        updatedDetail.replies.find((item, index) => {
-          if (item.id === action.body.comment.Id) {
+        updatedDetail.replies.find(item => {
+          if (item.id === comment.Id) {
             let commentData = convertToLMCommentUI(
-              action.body.comment?.postId,
-              action.body.comment.replies,
-              action.body.users,
+              comment?.postId,
+              comment.replies,
+              users,
             );
             let newReplies = commentData || [];
-            newReplies = [...(item.replies || []), ...newReplies];
-            console.log('fgg', newReplies);
-            item.replies = newReplies;
-            // item.replies = [...updatedDetail.replies[index].replies, commentData];
+            // Filter out replies that are already present in item.replies
+            newReplies = newReplies.filter(
+              newReply =>
+                !item.replies || // Check if item.replies exist
+                !item.replies.some(
+                  existingReply => existingReply.id === newReply.id,
+                ),
+            );
+
+            // Merge the unique newReplies with existing replies in item.replies
+            let mergedReplies = [...(item.replies || []), ...newReplies];
+            item.replies = mergedReplies;
           }
         });
       return {...state, postDetail: updatedDetail};
     }
     case CLEAR_COMMENT: {
       let updatedDetail = state.postDetail;
-
       updatedDetail?.replies &&
         updatedDetail.replies.find(item => {
           if (item.id === action.body) {
@@ -69,58 +89,187 @@ export function postDetailReducer(state = initialState, action: any) {
       return {...state, postDetail: updatedDetail};
     }
     case CLEAR_POST: {
-     
-      return{...state, postDetail: {} as LMPostUI}
+      return {...state, postDetail: {} as LMPostUI};
     }
     case DELETE_COMMENT_STATE: {
-      let updatedFeed = state.postDetail;
-      // this gets the index of the post that is deleted
-      const deletedPostIndex =
-        updatedFeed?.replies &&
-        updatedFeed.replies.findIndex((item: any) => item?.id === action.body);
-      // removes that post from the data
+      let updatedPostDetail = state.postDetail;
+      // this gets the index of the comment that is deleted      
+      const deletedCommentIndex =
+        updatedPostDetail?.replies &&
+        updatedPostDetail.replies.findIndex(
+          (item: any) => item?.id === action.body.commentId,
+        );
+      // removes that comment from the data
       if (
-        updatedFeed?.replies &&
-        deletedPostIndex !== undefined &&
-        deletedPostIndex !== -1
+        updatedPostDetail?.replies &&
+        deletedCommentIndex !== undefined &&
+        deletedCommentIndex !== -1
       ) {
-        updatedFeed?.replies.splice(deletedPostIndex, 1);
-        updatedFeed.commentsCount = updatedFeed.commentsCount - 1;
-        return {...state, postDetail: updatedFeed};
+        updatedPostDetail?.replies.splice(deletedCommentIndex, 1);
+        updatedPostDetail.commentsCount = updatedPostDetail.commentsCount - 1;
+        return {...state, postDetail: updatedPostDetail};
       } else {
-        if (updatedFeed?.replies) {
-          for (let i = 0; i <= updatedFeed?.replies?.length - 1; i++) {
-            const deletedPostIndexChild =
-              updatedFeed?.replies &&
-              updatedFeed.replies[i].replies.findIndex(
-                (item: any) => item?.id === action.body,
+        if (updatedPostDetail?.replies) {
+          for (let i = 0; i <= updatedPostDetail?.replies?.length - 1; i++) {
+            const deletedCommentIndexChild =
+              updatedPostDetail?.replies &&
+              updatedPostDetail.replies[i].replies.findIndex(
+                (item: any) => item?.id === action.body.commentId,
               );
-            // removes that post from the data
-
+            // removes that child comment from the data
             if (
-              updatedFeed?.replies[i].replies &&
-              deletedPostIndexChild !== undefined &&
-              deletedPostIndexChild !== -1
+              updatedPostDetail?.replies[i].replies &&
+              deletedCommentIndexChild !== undefined &&
+              deletedCommentIndexChild !== -1
             ) {
-              // updatedFeed?.replies[i].replies.splice(deletedPostIndexChild, 1);
-              // updatedFeed.replies[i].repliesCount =
-              //   updatedFeed.replies[i].repliesCount - 1;
-              updatedFeed.replies[i].replies.splice(deletedPostIndexChild, 1);
-
-              updatedFeed.replies[i] = {
-                ...updatedFeed.replies[i],
-                replies: updatedFeed.replies[i].replies,
-                repliesCount: updatedFeed.replies[i].repliesCount - 1,
+              updatedPostDetail.replies[i].replies.splice(
+                deletedCommentIndexChild,
+                1,
+              );
+              updatedPostDetail.replies[i] = {
+                ...updatedPostDetail.replies[i],
+                replies: updatedPostDetail.replies[i].replies,
+                repliesCount: updatedPostDetail.replies[i].repliesCount - 1,
               } as LMCommentUI;
-              // return {...state, postDetail: updatedFeed};
             }
           }
         }
       }
-      return {...state, postDetail: {...updatedFeed}};
+      return {...state, postDetail: {...updatedPostDetail}};
     }
     case COMMENT_DELETE_SUCCESS: {
       return {...state};
+    }
+    case CREATE_COMMENT_STATE: {
+      const currentDate = new Date();
+      let updatedPostDetail = state.postDetail;
+      let {newComment, postId, tempId} = action.body.payload;
+      let {loggedInUser} = action.body;
+      // creating an local object of comment
+      let localComment: LMCommentUI = {
+        id: '',
+        postId: postId,
+        repliesCount: 0,
+        level: 0,
+        createdAt: currentDate.getTime(),
+        isEdited: false,
+        isLiked: false,
+        likesCount: 0,
+        menuItems: [],
+        text: newComment,
+        replies: [],
+        tempId: tempId,
+        updatedAt: currentDate.getTime(),
+        userId: '',
+        uuid: '',
+        user: loggedInUser,
+      };
+      // appending that object in the list and update the count
+      updatedPostDetail.replies?.splice(0, 0, localComment);
+      updatedPostDetail.commentsCount = updatedPostDetail.commentsCount + 1;
+
+      return {...state, postDetail: updatedPostDetail};
+    }
+    case CREATE_COMMENT_SUCCESS: {
+      const {comment, users} = action.body;
+      let updatedPostDetail = state.postDetail;
+      // finds the reply with same tempId
+      updatedPostDetail.replies?.find(item => {
+        if (item.tempId == comment.tempId) {
+          // converts the response to LMCommentUI model
+          let commentData = convertToLMCommentUI(
+            comment.postId,
+            [comment],
+            users,
+          );
+          // replacing the local object with response of the api
+          (item.createdAt = commentData[0].createdAt),
+            (item.id = commentData[0].id),
+            (item.menuItems = commentData[0].menuItems),
+            (item.isEdited = commentData[0].isEdited),
+            (item.isLiked = commentData[0].isLiked),
+            (item.level = commentData[0].level),
+            (item.likesCount = commentData[0].likesCount),
+            (item.postId = commentData[0].postId),
+            (item.replies = commentData[0].replies),
+            (item.repliesCount = commentData[0].repliesCount),
+            (item.text = commentData[0].text),
+            (item.user = commentData[0].user),
+            (item.userId = commentData[0].userId),
+            (item.uuid = commentData[0].uuid);
+        }
+      });
+      return {...state, postDetail: updatedPostDetail};
+    }
+    case CREATE_REPLY_STATE: {
+      const currentDate = new Date();
+      let updatedPostDetail = state.postDetail;
+      let {newComment, postId, tempId, commentId} = action.body.payload;
+      let {loggedInUser} = action.body;
+      // creating an local object of reply
+      let localReply: LMCommentUI = {
+        id: '',
+        postId: postId,
+        repliesCount: 0,
+        level: 1,
+        createdAt: currentDate.getTime(),
+        isEdited: false,
+        isLiked: false,
+        likesCount: 0,
+        menuItems: [],
+        text: newComment,
+        replies: [],
+        tempId: tempId,
+        updatedAt: currentDate.getTime(),
+        userId: '',
+        uuid: '',
+        user: loggedInUser,
+      };
+      // finding the parentComment of the reply added
+      let parentComment = updatedPostDetail.replies?.find(
+        item => item.id === commentId,
+      );
+      // append the reply locaaly in the comment's replies list and handle the count
+      parentComment?.replies.splice(0, 0, localReply);
+      if (parentComment) {
+        parentComment.repliesCount = parentComment?.repliesCount + 1;
+      }
+      return {...state, postDetail: updatedPostDetail};
+    }
+    case CREATE_REPLY_SUCCESS: {
+      const {comment, users} = action.body;
+      let updatedPostDetail = state.postDetail;
+      // finds the parent comment
+      updatedPostDetail.replies?.find(item => {
+        if (item.id === comment.parentComment.Id) {
+          // converts the response to LMCommentUI model
+          let commentData = convertToLMCommentUI(
+            comment.postId,
+            [comment],
+            users,
+          );
+          // replacing the local object with response of the api
+          item.replies.find(replyItem => {
+            if (replyItem.tempId == comment.tempId) {
+              (replyItem.createdAt = commentData[0].createdAt),
+                (replyItem.id = commentData[0].id),
+                (replyItem.menuItems = commentData[0].menuItems),
+                (replyItem.isEdited = commentData[0].isEdited),
+                (replyItem.isLiked = commentData[0].isLiked),
+                (replyItem.level = commentData[0].level),
+                (replyItem.likesCount = commentData[0].likesCount),
+                (replyItem.postId = commentData[0].postId),
+                (replyItem.replies = commentData[0].replies),
+                (replyItem.repliesCount = commentData[0].repliesCount),
+                (replyItem.text = commentData[0].text),
+                (replyItem.user = commentData[0].user),
+                (replyItem.userId = commentData[0].userId),
+                (replyItem.uuid = commentData[0].uuid);
+            }
+          });
+        }
+      });
+      return {...state, postDetail: updatedPostDetail};
     }
     case PIN_POST_SUCCESS: {
       return {...state};
@@ -144,24 +293,6 @@ export function postDetailReducer(state = initialState, action: any) {
           updatedFeed.menuItems[menuItemIndex].id = PIN_POST_ID;
           updatedFeed.menuItems[menuItemIndex].title = PIN_THIS_POST;
         }
-      }
-
-      return {...state, postDetail: updatedFeed};
-    }
-    case LIKE_POST_SUCCESS: {
-      return {...state};
-    }
-    case LIKE_POST_STATE: {
-      console.log('hj', state.postDetail.isLiked);
-      let updatedFeed = state.postDetail;
-      // this updates the isLiked value
-      updatedFeed.isLiked = !updatedFeed.isLiked;
-      if (updatedFeed.isLiked) {
-        // increase the like count
-        updatedFeed.likesCount = updatedFeed.likesCount + 1;
-      } else {
-        // decrease the like count
-        updatedFeed.likesCount = updatedFeed.likesCount - 1;
       }
       return {...state, postDetail: updatedFeed};
     }
