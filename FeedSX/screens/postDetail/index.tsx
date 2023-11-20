@@ -72,6 +72,7 @@ import {DeleteModal, ReportModal} from '../../customModals';
 import LMLoader from '../../../LikeMinds-ReactNative-Feed-UI/src/base/LMLoader';
 import {TouchableOpacity} from 'react-native-gesture-handler';
 import {styles} from './styles';
+import Layout from '../../constants/Layout';
 
 const PostDetail = (props: any) => {
   const dispatch = useDispatch();
@@ -448,7 +449,7 @@ const PostDetail = (props: any) => {
         enabled={Platform.OS === 'android' ? true : false}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={
-          Platform.OS === 'android' ? (keyboardIsVisible ? 0 : 48) : 0
+          Platform.OS === 'android' ? (keyboardIsVisible ? 0 : Layout.normalize(32)) : 0
         }
         style={{flex: 1}}>
         {/* header view */}
@@ -469,7 +470,7 @@ const PostDetail = (props: any) => {
         <View
           style={StyleSheet.flatten([
             styles.mainContainer,
-            {paddingBottom: replyOnComment.textInputFocus ? 78 : 48},
+            {paddingBottom: replyOnComment.textInputFocus ? Layout.normalize(74) : Layout.normalize(44)},
           ])}>
           {postDetail?.id ? (
             <>

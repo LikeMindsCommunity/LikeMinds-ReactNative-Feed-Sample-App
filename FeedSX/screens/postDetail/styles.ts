@@ -5,7 +5,7 @@ import STYLES from '../../constants/Styles';
 export const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
-    height: Layout.window.height - 48
+    height: Layout.window.height - Layout.normalize(44)
   },
   commentCountText: {
     paddingHorizontal: 15,
@@ -33,7 +33,7 @@ export const styles = StyleSheet.create({
   },
   replyCommentSection: {
     position: 'absolute',
-    bottom: 48,
+    bottom: Layout.normalize(44),
     backgroundColor: '#e9e9e9',
     paddingHorizontal: 15,
     width: Layout.window.width,
@@ -57,7 +57,7 @@ export const styles = StyleSheet.create({
       width: 5,
       height: 5,
     },
-    height: 48,
+    height: Layout.normalize(44),
     paddingHorizontal: 15,
     fontSize: 14,
     color: '#222020',
