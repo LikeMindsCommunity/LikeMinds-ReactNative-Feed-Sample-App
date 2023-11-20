@@ -5,8 +5,7 @@ import STYLES from '../../constants/Styles';
 export const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
-    height: Layout.window.height - 48,
-    paddingBottom: 48,
+    height: Layout.window.height - 48
   },
   commentCountText: {
     paddingHorizontal: 15,

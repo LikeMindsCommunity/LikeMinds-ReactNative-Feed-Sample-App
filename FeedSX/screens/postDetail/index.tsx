@@ -1,9 +1,11 @@
 import {
-  Alert,
   FlatList,
   Image,
+  Keyboard,
+  KeyboardAvoidingView,
   SafeAreaView,
   ScrollView,
+  StyleSheet,
   Text,
   View,
 } from 'react-native';
@@ -96,7 +98,8 @@ const PostDetail = (props: any) => {
   });
   const [replyToUsername, setReplyToUsername] = useState('');
   const [localModalVisibility, setLocalModalVisibility] =
-  useState(showDeleteModal);
+    useState(showDeleteModal);
+  const [keyboardIsVisible, setKeyboardIsVisible] = useState(false);
 
   // this function closes the post action list modal
   const closePostActionListModal = () => {
@@ -416,192 +419,226 @@ const PostDetail = (props: any) => {
     setLocalModalVisibility(showDeleteModal);
   }, [showDeleteModal]);
 
+  // this handles the view layout with keyboard visibility
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      'keyboardDidShow',
+      () => {
+        setKeyboardIsVisible(true);
+      },
+    );
+
+    const keyboardDidHideListener = Keyboard.addListener(
+      'keyboardDidHide',
+      () => {
+        setKeyboardIsVisible(false);
+      },
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, []);
+
   return (
     <SafeAreaView style={{flex: 1}}>
-      {/* header view */}
-      <LMHeader
-        showBackArrow
-        heading="Post"
-        subHeading={
-          postDetail?.id
-            ? postDetail?.commentsCount > 1
-              ? `${postDetail?.commentsCount} comments`
-              : `${postDetail?.commentsCount} comment`
-            : ''
-        }
-        onBackPress={() => NavigationService.navigate(UNIVERSAL_FEED)}
-      />
+      <KeyboardAvoidingView
+        behavior={'height'}
+        keyboardVerticalOffset={keyboardIsVisible ? 0 : 48}
+        style={{flex: 1}}>
+        {/* header view */}
+        <LMHeader
+          showBackArrow
+          heading="Post"
+          subHeading={
+            postDetail?.id
+              ? postDetail?.commentsCount > 1
+                ? `${postDetail?.commentsCount} comments`
+                : `${postDetail?.commentsCount} comment`
+              : ''
+          }
+          onBackPress={() => NavigationService.navigate(UNIVERSAL_FEED)}
+        />
 
-      {/* post detail view */}
-      {postDetail?.id ? (
-        <>
-          {/* this renders when the post has commentsCount greater than 0 */}
-          {postDetail?.commentsCount > 0 ? (
-            <View style={styles.mainContainer}>
-              <FlatList
-                ListHeaderComponent={
-                  // this renders the post section
-                  <>
-                    {renderPostDetail()}
-                    <Text style={styles.commentCountText}>
-                      {postDetail.commentsCount > 1
-                        ? `${postDetail.commentsCount} Comments`
-                        : `${postDetail.commentsCount} Comment`}
+        {/* post detail view */}
+        <View
+          style={StyleSheet.flatten([
+            styles.mainContainer,
+            {paddingBottom: replyOnComment.textInputFocus ? 78 : 48},
+          ])}>
+          {postDetail?.id ? (
+            <>
+              {/* this renders when the post has commentsCount greater than 0 */}
+              {postDetail?.commentsCount > 0 ? (
+                <View>
+                  <FlatList
+                    keyboardShouldPersistTaps={'handled'}
+                    ListHeaderComponent={
+                      // this renders the post section
+                      <>
+                        {renderPostDetail()}
+                        <Text style={styles.commentCountText}>
+                          {postDetail.commentsCount > 1
+                            ? `${postDetail.commentsCount} Comments`
+                            : `${postDetail.commentsCount} Comment`}
+                        </Text>
+                      </>
+                    }
+                    data={postDetail?.replies}
+                    renderItem={({item}) => {
+                      // this renders the comments section
+                      return (
+                        <>
+                          {item && (
+                            <LMCommentItem
+                              comment={item}
+                              // this calls the getCommentsReplies function on click of number of child replies text
+                              onTapReplies={repliesResponseCallback => {
+                                dispatch(clearComments(item?.id) as any);
+                                getCommentsReplies(
+                                  item?.postId,
+                                  item?.id,
+                                  repliesResponseCallback,
+                                  1,
+                                );
+                              }}
+                              // this handles the pagination of child replies on click of view more
+                              onTapViewMore={(
+                                val: any,
+                                repliesResponseCallback,
+                              ) => {
+                                setReplyPageNumber(val);
+                                getCommentsReplies(
+                                  item?.postId,
+                                  item?.id,
+                                  repliesResponseCallback,
+                                  val,
+                                );
+                              }}
+                              // this hanldes the functionality on click of reply text to add reply to an comment
+                              replyTextProps={{
+                                onTap: () => {
+                                  setReplyOnComment({
+                                    textInputFocus: true,
+                                    commentId: item?.id,
+                                  });
+                                  setReplyToUsername(item?.user?.name);
+                                },
+                              }}
+                              // view more text style
+                              viewMoreRepliesProps={{
+                                text: '',
+                                textStyle: styles.viewMoreText,
+                              }}
+                              // comment menu item props
+                              commentMenu={{
+                                postId: item?.id,
+                                menuItems: item?.menuItems,
+                                modalPosition: modalPositionComment,
+                                modalVisible: showCommentActionListModal,
+                                onCloseModal: closeCommentActionListModal,
+                                onSelected: (commentId, itemId) =>
+                                  onCommentMenuItemSelect(commentId, itemId),
+                              }}
+                              // this executes on click of like icon of comment
+                              likeIconButton={{
+                                onTap: id => {
+                                  commentLikeHandler(item?.postId, id);
+                                },
+                              }}
+                              // this executes on click of like text of comment
+                              likeTextButton={{
+                                onTap: id =>
+                                  NavigationService.navigate(LIKES_LIST, [
+                                    COMMENT_LIKES,
+                                    id,
+                                    item?.postId,
+                                  ]),
+                              }}
+                            />
+                          )}
+                        </>
+                      );
+                    }}
+                    onEndReachedThreshold={0.3}
+                    onEndReached={() => {
+                      setCommentPageNumber(commentPageNumber + 1);
+                    }}
+                  />
+                </View>
+              ) : (
+                // this section renders if the post has 0 comments
+                <ScrollView keyboardShouldPersistTaps={'handled'}>
+                  {renderPostDetail()}
+                  <View style={styles.noCommentSection}>
+                    <Text style={styles.noCommentText}>No comment found</Text>
+                    <Text style={{color: '#0F1E3D66'}}>
+                      Be the first one to comment
                     </Text>
-                  </>
-                }
-                data={postDetail?.replies}
-                renderItem={({item}) => {
-                  // this renders the comments section
-                  return (
-                    <>
-                      {item && (
-                        <LMCommentItem
-                          comment={item}
-                          // this calls the getCommentsReplies function on click of number of child replies text
-                          onTapReplies={repliesResponseCallback => {
-                            dispatch(clearComments(item?.id) as any);
-                            getCommentsReplies(
-                              item?.postId,
-                              item?.id,
-                              repliesResponseCallback,
-                              1,
-                            );
-                          }}
-                          // this handles the pagination of child replies on click of view more
-                          onTapViewMore={(
-                            val: any,
-                            repliesResponseCallback,
-                          ) => {
-                            setReplyPageNumber(val);
-                            getCommentsReplies(
-                              item?.postId,
-                              item?.id,
-                              repliesResponseCallback,
-                              val,
-                            );
-                          }}
-                          // this hanldes the functionality on click of reply text to add reply to an comment
-                          replyTextProps={{
-                            onTap: () => {
-                              setReplyOnComment({
-                                textInputFocus: true,
-                                commentId: item?.id,
-                              });
-                              setReplyToUsername(item?.user?.name);
-                            },
-                          }}
-                          // view more text style
-                          viewMoreRepliesProps={{
-                            text: '',
-                            textStyle: styles.viewMoreText,
-                          }}
-                          // comment menu item props
-                          commentMenu={{
-                            postId: item?.id,
-                            menuItems: item?.menuItems,
-                            modalPosition: modalPositionComment,
-                            modalVisible: showCommentActionListModal,
-                            onCloseModal: closeCommentActionListModal,
-                            onSelected: (commentId, itemId) =>
-                              onCommentMenuItemSelect(commentId, itemId),
-                          }}
-                          // this executes on click of like icon of comment
-                          likeIconButton={{
-                            onTap: id => {
-                              commentLikeHandler(item?.postId, id);
-                            },
-                          }}
-                          // this executes on click of like text of comment
-                          likeTextButton={{
-                            onTap: id =>
-                              NavigationService.navigate(LIKES_LIST, [
-                                COMMENT_LIKES,
-                                id,
-                                item?.postId,
-                              ]),
-                          }}
-                        />
-                      )}
-                    </>
-                  );
-                }}
-                onEndReachedThreshold={0.3}
-                onEndReached={() => {
-                  setCommentPageNumber(commentPageNumber + 1);
-                }}
-              />
-            </View>
+                  </View>
+                </ScrollView>
+              )}
+            </>
           ) : (
-            // this section renders if the post has 0 comments
-            <ScrollView>
-              {renderPostDetail()}
-              <View style={styles.noCommentSection}>
-                <Text style={styles.noCommentText}>No comment found</Text>
-                <Text style={{color: '#0F1E3D66'}}>
-                  Be the first one to comment
-                </Text>
-              </View>
-            </ScrollView>
+            // this renders the loader until the data is fetched
+            <View style={styles.loaderView}>
+              <LMLoader />
+            </View>
           )}
-        </>
-      ) : (
-        // this renders the loader until the data is fetched
-        <View style={styles.loaderView}>
-          <LMLoader />
         </View>
-      )}
 
-      {/* replying to username view which renders when the user is adding a reply to a comment */}
-      {replyOnComment.textInputFocus && (
-        <View style={styles.replyCommentSection}>
-          <Text style={{color: '#0F1E3D99'}}>
-            Replying to {replyToUsername}
-          </Text>
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={() =>
-              setReplyOnComment({
-                textInputFocus: false,
-                commentId: '',
-              })
-            }>
-            <Image
-              source={require('../../assets/images/close_icon3x.png')}
-              style={styles.crossIconStyle}
-            />
-          </TouchableOpacity>
-        </View>
-      )}
-
-      {/* text input section for comment */}
-      <LMInputText
-        inputTextStyle={styles.textInputStyle}
-        autoFocus={
-          props.route.params[1] === NAVIGATED_FROM_COMMENT
-            ? true
-            : replyOnComment.textInputFocus
-        }
-        placeholderText="Write a comment"
-        placeholderTextColor="#9B9B9B"
-        inputText={commentToAdd}
-        onType={val => setCommentToAdd(val)}
-        rightIcon={{
-          onTap: () => {
-            commentToAdd
-              ? replyOnComment.textInputFocus
-                ? addNewReply(postDetail?.id, replyOnComment.commentId)
-                : addNewComment(postDetail?.id)
-              : {};
-          },
-          icon: {
-            type: 'png',
-            assetPath: require('../../assets/images/send_icon3x.png'),
-            iconStyle: {opacity: commentToAdd ? 1 : 0.7},
-          },
-          clickDisable: commentToAdd ? false : true,
-        }}
-      />
+        {/* replying to username view which renders when the user is adding a reply to a comment */}
+        {replyOnComment.textInputFocus && (
+          <View style={styles.replyCommentSection}>
+            <Text style={{color: '#0F1E3D99'}}>
+              Replying to {replyToUsername}
+            </Text>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() =>
+                setReplyOnComment({
+                  textInputFocus: false,
+                  commentId: '',
+                })
+              }>
+              <Image
+                source={require('../../assets/images/close_icon3x.png')}
+                style={styles.crossIconStyle}
+              />
+            </TouchableOpacity>
+          </View>
+        )}
+        {/* text input section for comment */}
+        <LMInputText
+          inputTextStyle={styles.textInputStyle}
+          autoFocus={
+            props.route.params[1] === NAVIGATED_FROM_COMMENT
+              ? true
+              : replyOnComment.textInputFocus
+          }
+          placeholderText="Write a comment"
+          placeholderTextColor="#9B9B9B"
+          inputText={commentToAdd}
+          disabled={postDetail?.id ? false : true}
+          onType={val => setCommentToAdd(val)}
+          rightIcon={{
+            onTap: () => {
+              commentToAdd
+                ? replyOnComment.textInputFocus
+                  ? addNewReply(postDetail?.id, replyOnComment.commentId)
+                  : addNewComment(postDetail?.id)
+                : {};
+            },
+            icon: {
+              type: 'png',
+              assetPath: require('../../assets/images/send_icon3x.png'),
+              iconStyle: {opacity: commentToAdd ? 1 : 0.7},
+            },
+            clickDisable: commentToAdd ? false : true,
+          }}
+        />
+      </KeyboardAvoidingView>
 
       {/* delete post modal */}
       {localModalVisibility && (
