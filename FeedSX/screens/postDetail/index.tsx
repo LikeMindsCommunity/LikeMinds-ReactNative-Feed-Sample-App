@@ -3,6 +3,7 @@ import {
   Image,
   Keyboard,
   KeyboardAvoidingView,
+  Platform,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -444,8 +445,11 @@ const PostDetail = (props: any) => {
   return (
     <SafeAreaView style={{flex: 1}}>
       <KeyboardAvoidingView
-        behavior={'height'}
-        keyboardVerticalOffset={keyboardIsVisible ? 0 : 48}
+        enabled={Platform.OS === 'android' ? true : false}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={
+          Platform.OS === 'android' ? (keyboardIsVisible ? 0 : 48) : 0
+        }
         style={{flex: 1}}>
         {/* header view */}
         <LMHeader
