@@ -444,7 +444,7 @@ const PostDetail = (props: any) => {
   }, []);
 
   return (
-    <>
+    <SafeAreaView style={{flex:1}}>
       <KeyboardAvoidingView
         enabled={Platform.OS === 'android' ? true : false}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -680,7 +680,7 @@ const PostDetail = (props: any) => {
           commentDetail={getCommentDetail(postDetail?.replies)}
         />
       )}
-    </>
+    </SafeAreaView>
   );
 };
 
