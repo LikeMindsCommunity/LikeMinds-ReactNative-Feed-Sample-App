@@ -23,6 +23,7 @@ import {
   CLEAR_FEED,
   CREATE_COMMENT_SUCCESS,
   DELETE_COMMENT_STATE,
+  UNIVERSAL_FEED_REFRESH_SUCCESS,
 } from '../types/types';
 
 const initialState = {
@@ -57,6 +58,12 @@ export function feedReducer(state = initialState, action: any) {
       let usersData = state.users;
       usersData = {...usersData, ...users};
       return {...state, feed: feedData, users: usersData};
+    }
+    case UNIVERSAL_FEED_REFRESH_SUCCESS:{
+      const {users = {}} = action.body;
+      // model converter function
+      let post = convertUniversalFeedPosts(action.body);
+      return {...state, feed: post, users: users};
     }
     case LIKE_POST_SUCCESS: {
       return {...state};

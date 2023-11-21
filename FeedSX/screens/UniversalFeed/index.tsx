@@ -1,8 +1,9 @@
-import React, {useEffect, useLayoutEffect, useState} from 'react';
+import React, {useEffect, useLayoutEffect, useRef, useState} from 'react';
 import {
   Alert,
   Image,
   Platform,
+  RefreshControl,
   SafeAreaView,
   Text,
   TouchableOpacity,
@@ -19,8 +20,8 @@ import {
 import {useDispatch} from 'react-redux';
 import {
   autoPlayPostVideo,
-  clearFeed,
   getFeed,
+  refreshFeed,
   getMemberState,
   initiateUser,
   likePost,
@@ -69,12 +70,15 @@ import {DeleteModal, ReportModal} from '../../customModals';
 import LMLoader from '../../../LikeMinds-ReactNative-Feed-UI/src/base/LMLoader';
 import {postLikesClear} from '../../store/actions/postLikes';
 import {setUploadAttachments, addPost} from '../../store/actions/createPost';
-import {CREATE_POST, LIKES_LIST, POST_DETAIL} from '../../constants/screenNames';
+import {
+  CREATE_POST,
+  LIKES_LIST,
+  POST_DETAIL,
+} from '../../constants/screenNames';
 import {uploadFilesToAWS} from '../../utils';
 import STYLES from '../../constants/Styles';
 import {showToastMessage} from '../../store/actions/toast';
-import { clearPostDetail } from '../../store/actions/postDetail';
-import { useFocusEffect } from '@react-navigation/native';
+import {clearPostDetail} from '../../store/actions/postDetail';
 
 const UniversalFeed = () => {
   const dispatch = useDispatch();
@@ -95,8 +99,12 @@ const UniversalFeed = () => {
   const memberRight = useAppSelector(state => state.feed.memberRights);
   const [postUploading, setPostUploading] = useState(false);
   const [showCreatePost, setShowCreatePost] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [localRefresh, setLocalRefresh] = useState(false);
+
   let uploadingMediaAttachmentType = mediaAttachmemnts[0]?.attachmentType;
   let uploadingMediaAttachment = mediaAttachmemnts[0]?.attachmentMeta.url;
+  const listRef = useRef<FlashList<LMPostUI>>(null);
 
   // this function calls initiate user API and sets the access token and community id
   async function getInitialData() {
@@ -186,11 +194,9 @@ const UniversalFeed = () => {
           conText: '',
         }) as any,
       );
-      await dispatch(clearFeed() as any);
-      setFeedPageNumber(1);
-      if (feedPageNumber === 1) {
-        fetchFeed();
-      }
+      // await dispatch(clearFeed() as any)
+      await onRefresh();
+      listRef.current?.scrollToIndex({animated: true, index: 0});
       dispatch(
         showToastMessage({
           isToast: true,
@@ -212,7 +218,7 @@ const UniversalFeed = () => {
       likePost(
         LikePostRequest.builder().setpostId(payload.postId).build(),
       ) as any,
-    );    
+    );
     if (postLikeResponse) {
     }
     return postLikeResponse;
@@ -223,30 +229,29 @@ const UniversalFeed = () => {
     let payload = {
       postId: id,
     };
-  try{
-    dispatch(savePostStateHandler(payload.postId) as any);
-    // calling the save post api
-    let savePostResponse = await dispatch(
-      savePost(
-        SavePostRequest.builder().setpostId(payload.postId).build(),
-      ) as any,
-    );
-    await dispatch(
-      showToastMessage({
-        isToast: true,
-        message: saved ? POST_UNSAVED_SUCCESS : POST_SAVED_SUCCESS,
-      }) as any,
-    );
-    return savePostResponse;
-  }catch (error) {
-    dispatch(
-      showToastMessage({
-        isToast: true,
-        message: SOMETHING_WENT_WRONG,
-      }) as any,
-    );
-  }
-   
+    try {
+      dispatch(savePostStateHandler(payload.postId) as any);
+      // calling the save post api
+      let savePostResponse = await dispatch(
+        savePost(
+          SavePostRequest.builder().setpostId(payload.postId).build(),
+        ) as any,
+      );
+      await dispatch(
+        showToastMessage({
+          isToast: true,
+          message: saved ? POST_UNSAVED_SUCCESS : POST_SAVED_SUCCESS,
+        }) as any,
+      );
+      return savePostResponse;
+    } catch (error) {
+      dispatch(
+        showToastMessage({
+          isToast: true,
+          message: SOMETHING_WENT_WRONG,
+        }) as any,
+      );
+    }
   }
 
   useLayoutEffect(() => {
@@ -330,16 +335,30 @@ const UniversalFeed = () => {
     );
     return postDetail;
   };
-  
-  // keyExtractor of feed list 
+
+  // keyExtractor of feed list
   const keyExtractor = (item: LMPostUI) => {
-    const id = item?.id; 
-    const itemLiked = item?.isLiked; 
-    const itemPinned = item?.isPinned; 
-    const itemComments = item?.commentsCount; 
-    const itemSaved = item?.isSaved; 
-  
+    const id = item?.id;
+    const itemLiked = item?.isLiked;
+    const itemPinned = item?.isPinned;
+    const itemComments = item?.commentsCount;
+    const itemSaved = item?.isSaved;
+
     return `${id}${itemLiked}${itemPinned}${itemComments}${itemSaved}`;
+  };
+
+  // this function is executed on pull to refresh 
+  const onRefresh = async () => {
+    setRefreshing(true);
+    setLocalRefresh(true);
+    // calling getFeed API
+    await dispatch(
+      refreshFeed(
+        GetFeedRequest.builder().setpage(1).setpageSize(20).build(),
+      ) as any,
+    );
+    setLocalRefresh(false);
+    setRefreshing(false);
   };
 
   return (
@@ -393,12 +412,25 @@ const UniversalFeed = () => {
         </View>
       )}
       {/* posts list section */}
-     {feedData?.length > 0 ? (
+      {feedData?.length > 0 ? (
         <FlashList
+          ref={listRef}
+          refreshing={refreshing}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
           data={feedData}
           renderItem={({item}: {item: LMPostUI}) => (
-            <TouchableOpacity activeOpacity={0.8} onPress={() => {dispatch(clearPostDetail() as any) ,NavigationService.navigate(POST_DETAIL, [item?.id, NAVIGATED_FROM_POST])}}>
-             <LMPost
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => {
+                dispatch(clearPostDetail() as any),
+                  NavigationService.navigate(POST_DETAIL, [
+                    item?.id,
+                    NAVIGATED_FROM_POST,
+                  ]);
+              }}>
+              <LMPost
                 post={item}
                 // header props
                 headerProps={{
@@ -437,15 +469,21 @@ const UniversalFeed = () => {
                   likeTextButton: {
                     onTap: () => {
                       dispatch(postLikesClear() as any);
-                      NavigationService.navigate(LIKES_LIST, [POST_LIKES,item?.id]);
+                      NavigationService.navigate(LIKES_LIST, [
+                        POST_LIKES,
+                        item?.id,
+                      ]);
                     },
                   },
-                  commentButton:{
-                    onTap:() => {
-                      dispatch(clearPostDetail() as any)
-                      NavigationService.navigate(POST_DETAIL, [item?.id, NAVIGATED_FROM_COMMENT])
-                    }
-                  }
+                  commentButton: {
+                    onTap: () => {
+                      dispatch(clearPostDetail() as any);
+                      NavigationService.navigate(POST_DETAIL, [
+                        item?.id,
+                        NAVIGATED_FROM_COMMENT,
+                      ]);
+                    },
+                  },
                 }}
                 mediaProps={{
                   attachments: item?.attachments ? item.attachments : [],
@@ -458,7 +496,7 @@ const UniversalFeed = () => {
               />
             </TouchableOpacity>
           )}
-          keyExtractor={(item) => keyExtractor(item)}
+          keyExtractor={item => keyExtractor(item)}
           estimatedItemSize={500}
           onEndReachedThreshold={0.3}
           onEndReached={() => {
@@ -485,7 +523,7 @@ const UniversalFeed = () => {
             justifyContent: 'center',
             marginBottom: 30,
           }}>
-          <LMLoader />
+          {!localRefresh && <LMLoader />}
         </View>
       )}
       {/* create post button section */}
