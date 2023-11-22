@@ -10,6 +10,7 @@ import {useDispatch} from 'react-redux';
 import {useAppSelector} from '../../store/store';
 import {
   LMHeader,
+  LMLikeUI,
   LMMemberListItem,
 } from '../../../LikeMinds-ReactNative-Feed-UI';
 import {NavigationService} from '../../navigation';

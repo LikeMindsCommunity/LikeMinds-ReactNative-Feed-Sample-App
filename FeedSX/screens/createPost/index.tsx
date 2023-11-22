@@ -15,6 +15,7 @@ import {
 } from '../../utils';
 import {useAppSelector} from '../../store/store';
 import {
+  LMAttachmentUI,
   LMButton,
   LMCarousel,
   LMDocument,

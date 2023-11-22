@@ -13,6 +13,7 @@ import {
 import React, {useEffect, useState} from 'react';
 import {
   LMCommentItem,
+  LMCommentUI,
   LMHeader,
   LMInputText,
   LMPost,
@@ -86,7 +87,7 @@ interface IProps {
 
 const PostDetail = (props: IProps) => {
   const dispatch = useDispatch();
-  const [modalPosition, setModalPosition] = useState({x: 0, y: 0});
+  const modalPosition = {x: 0, y: 0};
   const [showActionListModal, setShowActionListModal] = useState(false);
   const [selectedMenuItemPostId, setSelectedMenuItemPostId] = useState('');
   const [commentToAdd, setCommentToAdd] = useState('');
@@ -96,11 +97,10 @@ const PostDetail = (props: IProps) => {
   const [showReportModal, setShowReportModal] = useState(false);
   const {postDetail} = useAppSelector(state => state.postDetail);
   const [commentPageNumber, setCommentPageNumber] = useState(1);
-  const [replyPageNumber, setReplyPageNumber] = useState(0);
-  const [modalPositionComment, setModalPositionComment] = useState({
+  const modalPositionComment = {
     x: 0,
     y: 0,
-  });
+  };
   const loggedInUser = useAppSelector(state => state.feed.member);
   const [showCommentActionListModal, setShowCommentActionListModal] =
     useState(false);
@@ -288,7 +288,7 @@ const PostDetail = (props: IProps) => {
     repliesResponseCallback(
       postDetail?.replies &&
         postDetail?.replies[
-          postDetail.replies?.findIndex(item => item.id === commentId)
+          postDetail.replies?.findIndex((item: any) => item.id === commentId)
         ]?.replies,
     );
     return commentsRepliesResponse;
@@ -532,7 +532,6 @@ const PostDetail = (props: IProps) => {
                                   val: any,
                                   repliesResponseCallback,
                                 ) => {
-                                  setReplyPageNumber(val);
                                   getCommentsReplies(
                                     item?.postId,
                                     item?.id,

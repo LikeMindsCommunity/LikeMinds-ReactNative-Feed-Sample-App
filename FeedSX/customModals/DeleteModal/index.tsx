@@ -34,6 +34,7 @@ import {
   deleteComment,
   deleteCommentStateHandler,
 } from '../../store/actions/postDetail';
+import {LMCommentUI, LMPostUI} from '../../../LikeMinds-ReactNative-Feed-UI';
 
 // delete modal's props
 interface DeleteModalProps {

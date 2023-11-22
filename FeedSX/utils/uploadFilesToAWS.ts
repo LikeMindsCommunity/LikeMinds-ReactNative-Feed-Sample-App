@@ -1,3 +1,4 @@
+import {LMAttachmentMetaUI} from '../../LikeMinds-ReactNative-Feed-UI';
 import {getAWS} from './AWSConfig';
 
 // this function converts the image/video url to blob

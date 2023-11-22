@@ -34,10 +34,12 @@ import {useAppSelector} from '../../store/store';
 import {FlashList} from '@shopify/flash-list';
 import {styles} from './styles';
 import {
+  LMAttachmentUI,
   LMHeader,
   LMIcon,
   LMImage,
   LMPost,
+  LMPostUI,
   LMVideo,
 } from '../../../LikeMinds-ReactNative-Feed-UI';
 import {NavigationService} from '../../navigation';
@@ -86,9 +88,8 @@ const UniversalFeed = () => {
   );
   const showLoader = useAppSelector(state => state.loader.count);
   const [feedPageNumber, setFeedPageNumber] = useState(1);
-  const [communityId, setCommunityId] = useState('');
   const [accessToken, setAccessToken] = useState('');
-  const [modalPosition, setModalPosition] = useState({x: 0, y: 0});
+  const modalPosition = {x: 0, y: 0};
   const [showActionListModal, setShowActionListModal] = useState(false);
   const [selectedMenuItemPostId, setSelectedMenuItemPostId] = useState('');
   const [showDeleteModal, setDeleteModal] = useState(false);
@@ -119,7 +120,6 @@ const UniversalFeed = () => {
       // calling getMemberState API
       await dispatch(getMemberState() as any);
       setFeedPageNumber(1);
-      setCommunityId(initiateResponse?.community?.id);
       setAccessToken(initiateResponse?.accessToken);
     }
     return initiateResponse;

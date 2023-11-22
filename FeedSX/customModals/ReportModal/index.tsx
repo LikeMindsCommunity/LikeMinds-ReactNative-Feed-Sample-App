@@ -36,6 +36,7 @@ import {showToastMessage} from '../../store/actions/toast';
 import LMLoader from '../../../LikeMinds-ReactNative-Feed-UI/src/base/LMLoader';
 import {SafeAreaView} from 'react-native';
 import Toast from 'react-native-toast-message';
+import {LMCommentUI, LMPostUI} from '../../../LikeMinds-ReactNative-Feed-UI';
 
 // interface for post report api request
 interface ReportRequest {
