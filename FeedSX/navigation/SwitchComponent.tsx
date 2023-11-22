@@ -1,11 +1,11 @@
 import * as React from 'react';
 import {NavigationContainer} from '@react-navigation/native';
 import {createStackNavigator} from '@react-navigation/stack';
-import {CreatePost, LikesList, UniversalFeed} from '../screens';
+import {CreatePost, LikesList, PostDetail, UniversalFeed} from '../screens';
 import {navigationRef} from './RootNavigation';
 import {useAppSelector} from '../store/store';
 import {LMToast} from '../components';
-import { CREATE_POST, LIKES_LIST, UNIVERSAL_FEED } from '../constants/screenNames';
+import { CREATE_POST, LIKES_LIST, POST_DETAIL, UNIVERSAL_FEED } from '../constants/screenNames';
 
 const Stack = createStackNavigator();
 const SwitchComponent = () => {
@@ -18,6 +18,7 @@ const SwitchComponent = () => {
           <Stack.Screen name={UNIVERSAL_FEED} component={UniversalFeed} />
           <Stack.Screen name={LIKES_LIST} component={LikesList} />
           <Stack.Screen name={CREATE_POST} component={CreatePost} />
+          <Stack.Screen name={POST_DETAIL} component={PostDetail} />
         </Stack.Navigator>
       </NavigationContainer>
 

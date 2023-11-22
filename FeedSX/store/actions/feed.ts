@@ -37,7 +37,7 @@ import {
   CLEAR_FEED,
 } from '../types/types';
 import {lmFeedClient} from '../../..';
-import {InitiateUserRequest} from '@likeminds.community/feed-js';
+import {InitiateUserRequest} from '@likeminds.community/feed-js-beta';
 
 // initiateUser API action
 export const initiateUser = (payload?: any) => async (dispatch: Dispatch) => {

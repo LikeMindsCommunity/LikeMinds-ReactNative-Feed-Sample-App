@@ -6,12 +6,14 @@ import {feedReducer} from './reducers/feedReducer';
 import {loader} from './reducers/loader';
 import { postLikesReducer } from './reducers/postLikesReducer';
 import { createPostReducer } from './reducers/createPostReducer';
+import { postDetailReducer } from './reducers/postDetailReducer';
 
 const rootReducer = combineReducers({
   feed: feedReducer,
   loader: loader,
   postLikes: postLikesReducer,
-  createPost: createPostReducer
+  createPost: createPostReducer,
+  postDetail: postDetailReducer
 });
 
 const store = configureStore({

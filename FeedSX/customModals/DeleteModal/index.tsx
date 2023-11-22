@@ -11,19 +11,29 @@ import React, {useState} from 'react';
 import styles from './styles';
 import {useDispatch} from 'react-redux';
 import {deletePost, deletePostStateHandler} from '../../store/actions/feed';
-import {DeletePostRequest} from '@likeminds.community/feed-js';
+import {
+  DeleteCommentRequest,
+  DeletePostRequest,
+} from '@likeminds.community/feed-js-beta';
 import {useAppSelector} from '../../store/store';
 import DeleteReasonsModal from '../DeleteReasonsModal';
 import {showToastMessage} from '../../store/actions/toast';
 import {
+  COMMENT_DELETE,
   CONFIRM_DELETE,
   DELETION_REASON,
   POST_DELETE,
+  POST_TYPE,
   REASON_FOR_DELETION_PLACEHOLDER,
   SOMETHING_WENT_WRONG,
 } from '../../constants/Strings';
 import STYLES from '../../constants/Styles';
 import Toast from 'react-native-toast-message';
+import {NavigationService} from '../../navigation';
+import {
+  deleteComment,
+  deleteCommentStateHandler,
+} from '../../store/actions/postDetail';
 
 // delete modal's props
 interface DeleteModalProps {
@@ -31,6 +41,7 @@ interface DeleteModalProps {
   displayModal: (value: boolean) => void;
   deleteType: string;
   postDetail: LMPostUI;
+  commentDetail?: LMCommentUI;
   modalBackdropColor?: string;
 }
 
@@ -40,9 +51,8 @@ const DeleteModal = ({
   deleteType,
   postDetail,
   modalBackdropColor,
+  commentDetail,
 }: DeleteModalProps) => {
-  const {id, userId} = {...postDetail};
-
   const dispatch = useDispatch();
   const loggedInUser = useAppSelector(state => state.feed.member);
   const [deletionReason, setDeletionReason] = useState('');
@@ -51,12 +61,12 @@ const DeleteModal = ({
 
   // this function calls the delete post api
   const postDelete = async () => {
-    if (!deletionReason && loggedInUser.userUniqueId != userId) {
+    if (!deletionReason && loggedInUser.userUniqueId != postDetail?.userId) {
       showToast();
     } else {
       let payload = {
         deleteReason: otherReason ? otherReason : deletionReason,
-        postId: id,
+        postId: postDetail?.id,
       };
       displayModal(false);
       dispatch(deletePostStateHandler(payload.postId) as any);
@@ -71,6 +81,7 @@ const DeleteModal = ({
       // toast message action
       if (deletePostResponse) {
         setDeletionReason('');
+        NavigationService.goBack();
         dispatch(
           showToastMessage({
             isToast: true,
@@ -86,6 +97,47 @@ const DeleteModal = ({
         );
       }
       return deletePostResponse;
+    }
+  };
+
+  // this function calls the delete comment api
+  const commentDelete = async () => {
+    if (!deletionReason && loggedInUser.userUniqueId != commentDetail?.userId) {
+      showToast();
+    } else {
+      let payload = {
+        deleteReason: otherReason ? otherReason : deletionReason,
+        commentId: commentDetail?.id ? commentDetail.id : '',
+        postId: commentDetail?.postId ? commentDetail.postId : '',
+      };
+      displayModal(false);
+      dispatch(deleteCommentStateHandler(payload) as any);
+      try {
+        let deleteCommentResponse = await dispatch(
+          deleteComment(
+            DeleteCommentRequest.builder()
+              .setcommentId(payload.commentId)
+              .setpostId(payload.postId)
+              .setreason(payload.deleteReason)
+              .build(),
+          ) as any,
+        );
+        setDeletionReason('');
+        await dispatch(
+          showToastMessage({
+            isToast: true,
+            message: COMMENT_DELETE,
+          }) as any,
+        );
+        return deleteCommentResponse;
+      } catch (error) {
+        dispatch(
+          showToastMessage({
+            isToast: true,
+            message: SOMETHING_WENT_WRONG,
+          }) as any,
+        );
+      }
     }
   };
 
@@ -158,28 +210,29 @@ const DeleteModal = ({
                     </Text>
 
                     {/* delete reason selection section */}
-                    {loggedInUser.userUniqueId != userId && (
-                      <TouchableOpacity
-                        activeOpacity={0.8}
-                        onPress={() => {
-                          setShowReasons(true);
-                        }}>
-                        <View style={styles.reasonsSelectionView}>
-                          {deletionReason ? (
-                            <Text style={styles.text}>{deletionReason}</Text>
-                          ) : (
-                            <Text style={styles.reasonText}>
-                              {DELETION_REASON}
-                              <Text style={{color: 'red'}}>*</Text>
-                            </Text>
-                          )}
-                          <Image
-                            source={require('../../assets/images/dropdown_icon3x.png')}
-                            style={styles.dropdownIcon}
-                          />
-                        </View>
-                      </TouchableOpacity>
-                    )}
+                    {loggedInUser.userUniqueId != postDetail?.userId &&
+                      loggedInUser.userUniqueId != commentDetail?.userId && (
+                        <TouchableOpacity
+                          activeOpacity={0.8}
+                          onPress={() => {
+                            setShowReasons(true);
+                          }}>
+                          <View style={styles.reasonsSelectionView}>
+                            {deletionReason ? (
+                              <Text style={styles.text}>{deletionReason}</Text>
+                            ) : (
+                              <Text style={styles.reasonText}>
+                                {DELETION_REASON}
+                                <Text style={{color: 'red'}}>*</Text>
+                              </Text>
+                            )}
+                            <Image
+                              source={require('../../assets/images/dropdown_icon3x.png')}
+                              style={styles.dropdownIcon}
+                            />
+                          </View>
+                        </TouchableOpacity>
+                      )}
 
                     {/* text input view for other reason text*/}
                     {deletionReason == 'Others' ? (
@@ -206,7 +259,11 @@ const DeleteModal = ({
                       {/* delete button section  */}
                       <TouchableOpacity
                         activeOpacity={0.8}
-                        onPress={() => postDelete()}>
+                        onPress={() =>
+                          deleteType === POST_TYPE
+                            ? postDelete()
+                            : commentDelete()
+                        }>
                         <Text style={styles.deleteTextBtn}>DELETE</Text>
                       </TouchableOpacity>
                     </View>

@@ -12,9 +12,10 @@ import React, {useEffect, useState} from 'react';
 import styles from './styles';
 import {useDispatch} from 'react-redux';
 import {getReportTags, postReport} from '../../store/actions/feed';
-import {GetReportTagsRequest, PostReportRequest} from '@likeminds.community/feed-js';
+import {GetReportTagsRequest, PostReportRequest} from '@likeminds.community/feed-js-beta';
 import {useAppSelector} from '../../store/store';
 import {
+  COMMENT_REPORTED_SUCCESSFULLY,
   COMMENT_REPORT_ENTITY_TYPE,
   COMMENT_TYPE,
   POST_REPORT_ENTITY_TYPE,
@@ -48,6 +49,7 @@ interface ReportModalProps {
   closeModal: () => void;
   reportType: string;
   postDetail: LMPostUI;
+  commentDetail?: LMCommentUI
 }
 
 const ReportModal = ({
@@ -55,8 +57,8 @@ const ReportModal = ({
   closeModal,
   reportType,
   postDetail,
+  commentDetail
 }: ReportModalProps) => {
-  const {id, uuid} = {...postDetail};
 
   const dispatch = useDispatch();
   const [selectedIndex, setSelectedIndex] = useState<number>(-1);
@@ -114,7 +116,7 @@ const ReportModal = ({
         dispatch(
           showToastMessage({
             isToast: true,
-            message: REPORTED_SUCCESSFULLY,
+            message: reportType === POST_TYPE ? REPORTED_SUCCESSFULLY : COMMENT_REPORTED_SUCCESSFULLY,
           }) as any,
         );
       } else {
@@ -274,7 +276,7 @@ const ReportModal = ({
                 selectedId != -1 || otherReason
                   ? () => {
                       reportPost({
-                        entityId: id,
+                        entityId: reportType === POST_TYPE ? postDetail?.id : commentDetail ? commentDetail?.id : '',
                         entityType:
                           reportType === POST_TYPE
                             ? POST_REPORT_ENTITY_TYPE
@@ -283,7 +285,7 @@ const ReportModal = ({
                             : REPLY_REPORT_ENTITY_TYPE, // different entityType value for post/comment/reply
                         reason: otherReason,
                         tagId: selectedId,
-                        uuid: uuid,
+                        uuid: reportType === POST_TYPE ?  postDetail?.uuid : commentDetail ? commentDetail?.uuid : '',
                       });
                     }
                   : () => null
