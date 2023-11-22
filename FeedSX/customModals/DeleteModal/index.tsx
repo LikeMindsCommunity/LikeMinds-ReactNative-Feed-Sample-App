@@ -213,27 +213,27 @@ const DeleteModal = ({
                     {/* delete reason selection section */}
                     {loggedInUser.userUniqueId != postDetail?.userId &&
                       loggedInUser.userUniqueId != commentDetail?.userId && (
-                      <TouchableOpacity
-                        activeOpacity={0.8}
-                        onPress={() => {
-                          setShowReasons(true);
-                        }}>
-                        <View style={styles.reasonsSelectionView}>
-                          {deletionReason ? (
-                            <Text style={styles.text}>{deletionReason}</Text>
-                          ) : (
-                            <Text style={styles.reasonText}>
-                              {DELETION_REASON}
-                              <Text style={{color: 'red'}}>*</Text>
-                            </Text>
-                          )}
-                          <Image
-                            source={require('../../assets/images/dropdown_icon3x.png')}
-                            style={styles.dropdownIcon}
-                          />
-                        </View>
-                      </TouchableOpacity>
-                    )}
+                        <TouchableOpacity
+                          activeOpacity={0.8}
+                          onPress={() => {
+                            setShowReasons(true);
+                          }}>
+                          <View style={styles.reasonsSelectionView}>
+                            {deletionReason ? (
+                              <Text style={styles.text}>{deletionReason}</Text>
+                            ) : (
+                              <Text style={styles.reasonText}>
+                                {DELETION_REASON}
+                                <Text style={{color: 'red'}}>*</Text>
+                              </Text>
+                            )}
+                            <Image
+                              source={require('../../assets/images/dropdown_icon3x.png')}
+                              style={styles.dropdownIcon}
+                            />
+                          </View>
+                        </TouchableOpacity>
+                      )}
 
                     {/* text input view for other reason text*/}
                     {deletionReason == 'Others' ? (

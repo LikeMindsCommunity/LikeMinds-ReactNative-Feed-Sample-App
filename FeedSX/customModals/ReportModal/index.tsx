@@ -281,29 +281,29 @@ const ReportModal = ({
               onPress={
                 selectedId != -1 || otherReason
                   ? () => {
-                    reportPost({
-                      entityId:
+                      reportPost({
+                        entityId:
                           reportType === POST_TYPE
                             ? postDetail?.id
                             : commentDetail
-                              ? commentDetail?.id
-                              : '',
-                      entityType:
+                            ? commentDetail?.id
+                            : '',
+                        entityType:
                           reportType === POST_TYPE
                             ? POST_REPORT_ENTITY_TYPE
                             : reportType === COMMENT_TYPE
-                              ? COMMENT_REPORT_ENTITY_TYPE
-                              : REPLY_REPORT_ENTITY_TYPE, // different entityType value for post/comment/reply
-                      reason: otherReason,
-                      tagId: selectedId,
-                      uuid:
+                            ? COMMENT_REPORT_ENTITY_TYPE
+                            : REPLY_REPORT_ENTITY_TYPE, // different entityType value for post/comment/reply
+                        reason: otherReason,
+                        tagId: selectedId,
+                        uuid:
                           reportType === POST_TYPE
                             ? postDetail?.uuid
                             : commentDetail
-                              ? commentDetail?.uuid
-                              : '',
-                    });
-                  }
+                            ? commentDetail?.uuid
+                            : '',
+                      });
+                    }
                   : () => null
               }>
               <Text style={styles.reportBtnText}>REPORT</Text>

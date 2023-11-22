@@ -402,10 +402,10 @@ const UniversalFeed = () => {
               activeOpacity={0.8}
               onPress={() => {
                 dispatch(clearPostDetail() as any),
-                NavigationService.navigate(POST_DETAIL, [
-                  item?.id,
-                  NAVIGATED_FROM_POST,
-                ]);
+                  NavigationService.navigate(POST_DETAIL, [
+                    item?.id,
+                    NAVIGATED_FROM_POST,
+                  ]);
               }}>
               <LMPost
                 post={item}
@@ -513,18 +513,18 @@ const UniversalFeed = () => {
           showCreatePost
             ? postUploading
               ? dispatch(
-                showToastMessage({
-                  isToast: true,
-                  message: POST_UPLOAD_INPROGRESS,
-                }) as any,
-              )
+                  showToastMessage({
+                    isToast: true,
+                    message: POST_UPLOAD_INPROGRESS,
+                  }) as any,
+                )
               : NavigationService.navigate(CREATE_POST)
             : dispatch(
-              showToastMessage({
-                isToast: true,
-                message: CREATE_POST_PERMISSION,
-              }) as any,
-            )
+                showToastMessage({
+                  isToast: true,
+                  message: CREATE_POST_PERMISSION,
+                }) as any,
+              )
         }>
         <Image
           source={require('../../assets/images/add_post_icon3x.png')}
