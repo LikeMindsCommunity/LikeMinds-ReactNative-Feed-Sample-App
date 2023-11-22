@@ -48,7 +48,11 @@ export const commentLikes = (payload?: any) => async (dispatch: Dispatch) => {
       [CALL_API]: {
         func: lmFeedClient?.getCommentLikes(payload),
         body: payload,
-        types: [COMMENT_LIKES_DATA, COMMENT_LIKES_SUCCESS, COMMENT_LIKES_FAILED],
+        types: [
+          COMMENT_LIKES_DATA,
+          COMMENT_LIKES_SUCCESS,
+          COMMENT_LIKES_FAILED,
+        ],
         showLoader: true,
       },
     });

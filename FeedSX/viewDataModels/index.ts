@@ -23,8 +23,8 @@ import {IComment} from '@likeminds.community/feed-js-beta';
  * @returns list of [LMPostUI]
  */
 export function convertUniversalFeedPosts(data: GetFeedResponse): LMPostUI[] {
-  let postData = data.posts;
-  let userData = data.users;
+  const postData = data.posts;
+  const userData = data.users;
   return postData?.map((item: IPost) => {
     return convertToLMPostUI(item, userData);
   });
@@ -164,8 +164,8 @@ export function convertToLMSDKClientInfoUI(data: IUser): LMSDKClientInfoUI {
  * @returns list of [LMLikeUI]
  */
 export function convertToLMLikesList(data: GetPostLikesResponse): LMLikeUI[] {
-  let likesListData = data?.likes;
-  let userData = data?.users;
+  const likesListData = data?.likes;
+  const userData = data?.users;
   return likesListData?.map((item: Like) => {
     return convertToLMLikeUI(item, userData);
   });

@@ -9,7 +9,7 @@ import {
 // function checks if we have access of storage in Android.
 export async function requestStoragePermission() {
   if (Platform.OS === 'android') {
-    let OSVersion = Platform.constants['Release'];
+    const OSVersion = Platform.constants['Release'];
 
     if (Number(OSVersion) < 13) {
       try {

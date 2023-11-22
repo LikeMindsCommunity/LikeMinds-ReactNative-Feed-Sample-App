@@ -4,7 +4,7 @@ import layout from '../../constants/Layout';
 export const styles = StyleSheet.create({
   container: {
     backgroundColor: '#fff',
-    height: layout.window.height
+    height: layout.window.height,
   },
   profileContainer: {
     flexDirection: 'row',
@@ -40,7 +40,7 @@ export const styles = StyleSheet.create({
     bottom: 0,
     width: layout.window.width,
     backgroundColor: '#fff',
-    height:122,
+    height: 122,
   },
   optionItemView: {
     flexDirection: 'row',

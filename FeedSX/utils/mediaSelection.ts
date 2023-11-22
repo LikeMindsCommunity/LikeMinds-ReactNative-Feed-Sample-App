@@ -11,9 +11,9 @@ export const selectImageVideo = async (type: string) => {
     if (response?.didCancel) {
       // process cancel
     }
-    let selectedImages = response?.assets; // selectedImages can be anything images or videos or both
+    const selectedImages = response?.assets; // selectedImages can be anything images or videos or both
 
-    if (!!selectedImages) {
+    if (selectedImages) {
       return;
     }
   });
@@ -26,10 +26,10 @@ export const selectDocument = async () => {
       type: [DocumentPicker.types.pdf],
       allowMultiSelection: true,
     });
-    let selectedDocs: any = response; // selectedImages can be anything images or videos or both
-    let docsArrlength = selectedDocs?.length;
+    const selectedDocs: any = response; // selectedImages can be anything images or videos or both
+    const docsArrlength = selectedDocs?.length;
     if (docsArrlength > 0) {
-      if (!!selectedDocs) {
+      if (selectedDocs) {
         return selectedDocs;
       }
     }

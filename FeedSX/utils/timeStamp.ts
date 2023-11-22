@@ -1,15 +1,15 @@
 // this function calculates the post created time duration from present date
 export const timeStamp = (value: number) => {
-  let currentDate = Number(new Date());
-  let postedDate = Number(new Date(value));
-  var difference = currentDate - postedDate;
+  const currentDate = Number(new Date());
+  const postedDate = Number(new Date(value));
+  const difference = currentDate - postedDate;
 
-  var seconds = Math.floor(difference / 1000),
+  let seconds = Math.floor(difference / 1000),
     minutes = Math.floor(seconds / 60),
     hours = Math.floor(minutes / 60),
     days = Math.floor(hours / 24),
-    months = Math.floor(days / 30),
-    years = Math.floor(days / 365);
+    months = Math.floor(days / 30);
+  const years = Math.floor(days / 365);
 
   seconds %= 60;
   minutes %= 60;

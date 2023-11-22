@@ -28,8 +28,8 @@ export function postDetailReducer(state = initialState, action: any) {
   switch (action.type) {
     case POST_DATA_SUCCESS: {
       const {post = {}, users = {}} = action.body;
-      let updatedPostDetail = state.postDetail;
-      let converterPostData = convertToLMPostUI(post, users);
+      const updatedPostDetail = state.postDetail;
+      const converterPostData = convertToLMPostUI(post, users);
       let newReplies = converterPostData.replies || [];
       // filter out the replies already present in postDetail
       newReplies = newReplies.filter(
@@ -40,7 +40,7 @@ export function postDetailReducer(state = initialState, action: any) {
           ),
       );
       // combines all the replies (handling pagination)
-      let allMergedReplies = [
+      const allMergedReplies = [
         ...(updatedPostDetail.replies || []),
         ...newReplies,
       ];
@@ -52,11 +52,11 @@ export function postDetailReducer(state = initialState, action: any) {
     }
     case POST_COMMENTS_SUCCESS: {
       const {comment, users} = action.body;
-      let updatedDetail = state.postDetail;
+      const updatedDetail = state.postDetail;
       updatedDetail?.replies &&
         updatedDetail.replies.find(item => {
           if (item.id === comment.Id) {
-            let commentData = convertToLMCommentUI(
+            const commentData = convertToLMCommentUI(
               comment?.postId,
               comment.replies,
               users,
@@ -72,14 +72,14 @@ export function postDetailReducer(state = initialState, action: any) {
             );
 
             // Merge the unique newReplies with existing replies in item.replies
-            let mergedReplies = [...(item.replies || []), ...newReplies];
+            const mergedReplies = [...(item.replies || []), ...newReplies];
             item.replies = mergedReplies;
           }
         });
       return {...state, postDetail: updatedDetail};
     }
     case CLEAR_COMMENT: {
-      let updatedDetail = state.postDetail;
+      const updatedDetail = state.postDetail;
       updatedDetail?.replies &&
         updatedDetail.replies.find(item => {
           if (item.id === action.body) {
@@ -92,8 +92,8 @@ export function postDetailReducer(state = initialState, action: any) {
       return {...state, postDetail: {} as LMPostUI};
     }
     case DELETE_COMMENT_STATE: {
-      let updatedPostDetail = state.postDetail;
-      // this gets the index of the comment that is deleted      
+      const updatedPostDetail = state.postDetail;
+      // this gets the index of the comment that is deleted
       const deletedCommentIndex =
         updatedPostDetail?.replies &&
         updatedPostDetail.replies.findIndex(
@@ -142,11 +142,11 @@ export function postDetailReducer(state = initialState, action: any) {
     }
     case CREATE_COMMENT_STATE: {
       const currentDate = new Date();
-      let updatedPostDetail = state.postDetail;
-      let {newComment, postId, tempId} = action.body.payload;
-      let {loggedInUser} = action.body;
+      const updatedPostDetail = state.postDetail;
+      const {newComment, postId, tempId} = action.body.payload;
+      const {loggedInUser} = action.body;
       // creating an local object of comment
-      let localComment: LMCommentUI = {
+      const localComment: LMCommentUI = {
         id: '',
         postId: postId,
         repliesCount: 0,
@@ -172,12 +172,12 @@ export function postDetailReducer(state = initialState, action: any) {
     }
     case CREATE_COMMENT_SUCCESS: {
       const {comment, users} = action.body;
-      let updatedPostDetail = state.postDetail;
+      const updatedPostDetail = state.postDetail;
       // finds the reply with same tempId
       updatedPostDetail.replies?.find(item => {
         if (item.tempId == comment.tempId) {
           // converts the response to LMCommentUI model
-          let commentData = convertToLMCommentUI(
+          const commentData = convertToLMCommentUI(
             comment.postId,
             [comment],
             users,
@@ -203,11 +203,11 @@ export function postDetailReducer(state = initialState, action: any) {
     }
     case CREATE_REPLY_STATE: {
       const currentDate = new Date();
-      let updatedPostDetail = state.postDetail;
-      let {newComment, postId, tempId, commentId} = action.body.payload;
-      let {loggedInUser} = action.body;
+      const updatedPostDetail = state.postDetail;
+      const {newComment, postId, tempId, commentId} = action.body.payload;
+      const {loggedInUser} = action.body;
       // creating an local object of reply
-      let localReply: LMCommentUI = {
+      const localReply: LMCommentUI = {
         id: '',
         postId: postId,
         repliesCount: 0,
@@ -226,7 +226,7 @@ export function postDetailReducer(state = initialState, action: any) {
         user: loggedInUser,
       };
       // finding the parentComment of the reply added
-      let parentComment = updatedPostDetail.replies?.find(
+      const parentComment = updatedPostDetail.replies?.find(
         item => item.id === commentId,
       );
       // append the reply locaaly in the comment's replies list and handle the count
@@ -238,12 +238,12 @@ export function postDetailReducer(state = initialState, action: any) {
     }
     case CREATE_REPLY_SUCCESS: {
       const {comment, users} = action.body;
-      let updatedPostDetail = state.postDetail;
+      const updatedPostDetail = state.postDetail;
       // finds the parent comment
       updatedPostDetail.replies?.find(item => {
         if (item.id === comment.parentComment.Id) {
           // converts the response to LMCommentUI model
-          let commentData = convertToLMCommentUI(
+          const commentData = convertToLMCommentUI(
             comment.postId,
             [comment],
             users,
@@ -275,13 +275,13 @@ export function postDetailReducer(state = initialState, action: any) {
       return {...state};
     }
     case PIN_POST_STATE: {
-      let updatedFeed = state.postDetail;
+      const updatedFeed = state.postDetail;
       if (updatedFeed != undefined) {
         // this updates the isPinned value
         updatedFeed.isPinned = !updatedFeed.isPinned;
 
         // this gets the index of pin/unpin from menu item
-        let menuItemIndex = updatedFeed?.menuItems?.findIndex(
+        const menuItemIndex = updatedFeed?.menuItems?.findIndex(
           (item: any) => item.id === PIN_POST_ID || item.id === UNPIN_POST_ID,
         );
         if (updatedFeed.isPinned) {

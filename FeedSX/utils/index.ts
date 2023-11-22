@@ -5,7 +5,7 @@ import {postShare} from './postShare';
 import {getAWS} from './AWSConfig';
 import {uploadFilesToAWS} from './uploadFilesToAWS';
 import {selectDocument, selectImageVideo} from './mediaSelection';
-import { detectURLs } from './detectLinks';
+import {detectURLs} from './detectLinks';
 
 export {
   timeStamp,
@@ -16,5 +16,5 @@ export {
   uploadFilesToAWS,
   selectDocument,
   selectImageVideo,
-  detectURLs
+  detectURLs,
 };

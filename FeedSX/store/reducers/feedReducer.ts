@@ -49,7 +49,7 @@ export function feedReducer(state = initialState, action: any) {
     case UNIVERSAL_FEED_SUCCESS: {
       const {users = {}} = action.body;
       // model converter function
-      let post = convertUniversalFeedPosts(action.body);
+      const post = convertUniversalFeedPosts(action.body);
       // this handles pagination and appends new post data with previous data
       let feedData = state.feed;
       feedData = [...feedData, ...post];
@@ -62,7 +62,7 @@ export function feedReducer(state = initialState, action: any) {
       return {...state};
     }
     case LIKE_POST_STATE: {
-      let updatedFeed = state.feed;
+      const updatedFeed = state.feed;
       // this gets the index of post that is liked
       const likedPostIndex = updatedFeed.findIndex(
         (item: any) => item?.id === action.body,
@@ -85,7 +85,7 @@ export function feedReducer(state = initialState, action: any) {
       return {...state};
     }
     case SAVE_POST_STATE: {
-      let updatedFeed = state.feed;
+      const updatedFeed = state.feed;
       // this gets the index of post that is saved
       const savedPostIndex = updatedFeed.findIndex(
         (item: any) => item?.id === action.body,
@@ -100,7 +100,7 @@ export function feedReducer(state = initialState, action: any) {
       return {...state};
     }
     case PIN_POST_STATE: {
-      let updatedFeed = state.feed;
+      const updatedFeed = state.feed;
       // this gets the index of post that is pinned
       const pinnedPostIndex = updatedFeed.findIndex(
         (item: any) => item?.id === action.body,
@@ -109,7 +109,7 @@ export function feedReducer(state = initialState, action: any) {
       updatedFeed[pinnedPostIndex]['isPinned'] =
         !updatedFeed[pinnedPostIndex]['isPinned'];
       // this gets the index of pin/unpin from menu item
-      let menuItemIndex = updatedFeed[pinnedPostIndex]['menuItems'].findIndex(
+      const menuItemIndex = updatedFeed[pinnedPostIndex]['menuItems'].findIndex(
         (item: any) => item.id === PIN_POST_ID || item.id === UNPIN_POST_ID,
       );
       if (updatedFeed[pinnedPostIndex]['isPinned']) {
@@ -139,7 +139,7 @@ export function feedReducer(state = initialState, action: any) {
       return {...state};
     }
     case DELETE_POST_STATE: {
-      let updatedFeed = state.feed;
+      const updatedFeed = state.feed;
       // this gets the index of the post that is deleted
       const deletedPostIndex = updatedFeed.findIndex(
         (item: any) => item?.id === action.body,
@@ -156,7 +156,7 @@ export function feedReducer(state = initialState, action: any) {
     }
     case CREATE_COMMENT_SUCCESS: {
       const {comment} = action.body;
-      let updatedFeed = state.feed;
+      const updatedFeed = state.feed;
       // finds the post in which new comment is added in post detail and manage its comment count
       updatedFeed.find((item: LMPostUI) => {
         if (item.id == comment.postId) {
@@ -166,7 +166,7 @@ export function feedReducer(state = initialState, action: any) {
       return {...state};
     }
     case DELETE_COMMENT_STATE: {
-      let updatedFeed = state.feed;
+      const updatedFeed = state.feed;
       // finds the post whose comment is deleted in post detail and manage its comment count
       updatedFeed.find((item: LMPostUI) => {
         if (item.id == action.body.postId) {

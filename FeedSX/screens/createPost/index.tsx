@@ -45,7 +45,7 @@ import {
   VIDEO_ATTACHMENT_TYPE,
 } from '../../constants/Strings';
 import {DecodeURLRequest} from '@likeminds.community/feed-js-beta';
-import _, {debounce} from 'lodash';
+import _ from 'lodash';
 import {
   getDecodedUrl,
   setUploadAttachments,
@@ -186,7 +186,7 @@ const CreatePost = () => {
     if (Platform.OS === 'ios') {
       setSelectedImageVideo(type);
     } else {
-      let res = await requestStoragePermission();
+      const res = await requestStoragePermission();
       if (res === true) {
         setSelectedImageVideo(type);
       }
@@ -198,7 +198,7 @@ const CreatePost = () => {
     if (Platform.OS === 'ios') {
       setSelectedDocuments();
     } else {
-      let res = await requestStoragePermission();
+      const res = await requestStoragePermission();
       if (res === true) {
         setSelectedDocuments();
       }
@@ -207,7 +207,7 @@ const CreatePost = () => {
 
   // function removes the selected documents
   const removeDocumentAttachment = (index: number) => {
-    let newDocAttachments = [...formattedDocumentAttachments];
+    const newDocAttachments = [...formattedDocumentAttachments];
     if (formattedDocumentAttachments.length === 1) {
       setFormattedDocumentAttachments([]);
       setShowOptions(true);
@@ -219,7 +219,7 @@ const CreatePost = () => {
 
   // function removes multiple images/videos selected
   const removeMediaAttachment = (index: number) => {
-    let newMediaAttachments = [...formattedMediaAttachments];
+    const newMediaAttachments = [...formattedMediaAttachments];
     newMediaAttachments.splice(index, 1);
     setFormattedMediaAttachments(newMediaAttachments);
   };
@@ -281,7 +281,7 @@ const CreatePost = () => {
   }, [postContentText]);
 
   // all image/video/document media to be uploaded
-  let allAttachment = [
+  const allAttachment = [
     ...formattedMediaAttachments,
     ...formattedDocumentAttachments,
   ];
@@ -370,7 +370,7 @@ const CreatePost = () => {
             </View>
           ) : formattedMediaAttachments ? (
             formattedMediaAttachments?.length > 1 ? (
-               <LMCarousel
+              <LMCarousel
                 attachments={formattedMediaAttachments}
                 showCancel
                 videoItem={{videoUrl: '', showControls: true}}
