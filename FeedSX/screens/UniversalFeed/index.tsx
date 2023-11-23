@@ -49,6 +49,7 @@ import {
   CREATE_POST_PERMISSION,
   DELETE_POST_MENU_ITEM,
   DOCUMENT_ATTACHMENT_TYPE,
+  EDIT_POST_MENU_ITEM,
   IMAGE_ATTACHMENT_TYPE,
   NAVIGATED_FROM_COMMENT,
   NAVIGATED_FROM_POST,
@@ -324,6 +325,9 @@ const UniversalFeed = () => {
     }
     if (itemId === DELETE_POST_MENU_ITEM) {
       handleDeletePost(true);
+    }
+    if (itemId === EDIT_POST_MENU_ITEM) {
+      NavigationService.navigate(CREATE_POST, postId)
     }
   };
 

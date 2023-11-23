@@ -63,7 +63,7 @@ import {styles} from './styles';
 import {showToastMessage} from '../../store/actions/toast';
 import LMLoader from '../../../LikeMinds-ReactNative-Feed-UI/src/base/LMLoader';
 
-const CreatePost = () => {
+const CreatePost = (props:any) => {  
   const memberData = useAppSelector(state => state.feed.member);
   const dispatch = useDispatch();
   const [formattedDocumentAttachments, setFormattedDocumentAttachments] =
@@ -79,6 +79,7 @@ const CreatePost = () => {
   const [showOptions, setShowOptions] = useState(true);
   const [showSelecting, setShowSelecting] = useState(false);
   const [postContentText, setPostContentText] = useState('');
+  const postToEdit = props?.route?.params
 
   // function handles the selection of images and videos
   const setSelectedImageVideo = (type: string) => {
@@ -293,7 +294,7 @@ const CreatePost = () => {
       <LMHeader
         showBackArrow
         onBackPress={() => NavigationService.navigate(UNIVERSAL_FEED)}
-        heading="Create a Post"
+        heading={postToEdit ? "Edit Post" : "Create a Post"}
         rightComponent={
           // post button section
           <TouchableOpacity
