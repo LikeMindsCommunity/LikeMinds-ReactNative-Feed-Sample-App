@@ -12,7 +12,10 @@ import React, {useEffect, useState} from 'react';
 import styles from './styles';
 import {useDispatch} from 'react-redux';
 import {getReportTags, postReport} from '../../store/actions/feed';
-import {GetReportTagsRequest, PostReportRequest} from '@likeminds.community/feed-js-beta';
+import {
+  GetReportTagsRequest,
+  PostReportRequest,
+} from '@likeminds.community/feed-js-beta';
 import {useAppSelector} from '../../store/store';
 import {
   COMMENT_REPORTED_SUCCESSFULLY,
@@ -33,6 +36,7 @@ import {showToastMessage} from '../../store/actions/toast';
 import LMLoader from '../../../LikeMinds-ReactNative-Feed-UI/src/base/LMLoader';
 import {SafeAreaView} from 'react-native';
 import Toast from 'react-native-toast-message';
+import {LMCommentUI, LMPostUI} from '../../../LikeMinds-ReactNative-Feed-UI';
 
 // interface for post report api request
 interface ReportRequest {
@@ -49,7 +53,7 @@ interface ReportModalProps {
   closeModal: () => void;
   reportType: string;
   postDetail: LMPostUI;
-  commentDetail?: LMCommentUI
+  commentDetail?: LMCommentUI;
 }
 
 const ReportModal = ({
@@ -57,9 +61,8 @@ const ReportModal = ({
   closeModal,
   reportType,
   postDetail,
-  commentDetail
+  commentDetail,
 }: ReportModalProps) => {
-
   const dispatch = useDispatch();
   const [selectedIndex, setSelectedIndex] = useState<number>(-1);
   const [otherReason, setOtherReason] = useState('');
@@ -68,10 +71,10 @@ const ReportModal = ({
 
   // this function calls the get report tags api for reporting a post
   const fetchReportTags = async () => {
-    let payload = {
+    const payload = {
       type: REPORT_TAGS_TYPE, // type 3 for report tags
     };
-    let reportTagsResponse = await dispatch(
+    const reportTagsResponse = await dispatch(
       getReportTags(
         GetReportTagsRequest.builder().settype(payload.type).build(),
       ) as any,
@@ -90,7 +93,7 @@ const ReportModal = ({
     if (selectedIndex == 5 && otherReason === '') {
       showToast();
     } else {
-      let payload = {
+      const payload = {
         entityId: entityId,
         entityType: entityType,
         reason: reason,
@@ -100,7 +103,7 @@ const ReportModal = ({
       setSelectedId(-1);
       setSelectedIndex(-1);
       closeModal();
-      let postReportResponse = await dispatch(
+      const postReportResponse = await dispatch(
         postReport(
           PostReportRequest.builder()
             .setEntityId(payload.entityId)
@@ -116,7 +119,10 @@ const ReportModal = ({
         dispatch(
           showToastMessage({
             isToast: true,
-            message: reportType === POST_TYPE ? REPORTED_SUCCESSFULLY : COMMENT_REPORTED_SUCCESSFULLY,
+            message:
+              reportType === POST_TYPE
+                ? REPORTED_SUCCESSFULLY
+                : COMMENT_REPORTED_SUCCESSFULLY,
           }) as any,
         );
       } else {
@@ -276,7 +282,12 @@ const ReportModal = ({
                 selectedId != -1 || otherReason
                   ? () => {
                       reportPost({
-                        entityId: reportType === POST_TYPE ? postDetail?.id : commentDetail ? commentDetail?.id : '',
+                        entityId:
+                          reportType === POST_TYPE
+                            ? postDetail?.id
+                            : commentDetail
+                            ? commentDetail?.id
+                            : '',
                         entityType:
                           reportType === POST_TYPE
                             ? POST_REPORT_ENTITY_TYPE
@@ -285,7 +296,12 @@ const ReportModal = ({
                             : REPLY_REPORT_ENTITY_TYPE, // different entityType value for post/comment/reply
                         reason: otherReason,
                         tagId: selectedId,
-                        uuid: reportType === POST_TYPE ?  postDetail?.uuid : commentDetail ? commentDetail?.uuid : '',
+                        uuid:
+                          reportType === POST_TYPE
+                            ? postDetail?.uuid
+                            : commentDetail
+                            ? commentDetail?.uuid
+                            : '',
                       });
                     }
                   : () => null

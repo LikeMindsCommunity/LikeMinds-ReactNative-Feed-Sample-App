@@ -13,6 +13,7 @@ import {
 import React, {useEffect, useState} from 'react';
 import {
   LMCommentItem,
+  LMCommentUI,
   LMHeader,
   LMInputText,
   LMPost,
@@ -74,9 +75,19 @@ import {TouchableOpacity} from 'react-native-gesture-handler';
 import {styles} from './styles';
 import Layout from '../../constants/Layout';
 
-const PostDetail = (props: any) => {
+interface IProps {
+  navigation: object;
+  route: {
+    key: string;
+    name: string;
+    params: Array<string>;
+    path: undefined;
+  };
+}
+
+const PostDetail = (props: IProps) => {
   const dispatch = useDispatch();
-  const [modalPosition, setModalPosition] = useState({x: 0, y: 0});
+  const modalPosition = {x: 0, y: 0};
   const [showActionListModal, setShowActionListModal] = useState(false);
   const [selectedMenuItemPostId, setSelectedMenuItemPostId] = useState('');
   const [commentToAdd, setCommentToAdd] = useState('');
@@ -86,11 +97,10 @@ const PostDetail = (props: any) => {
   const [showReportModal, setShowReportModal] = useState(false);
   const {postDetail} = useAppSelector(state => state.postDetail);
   const [commentPageNumber, setCommentPageNumber] = useState(1);
-  const [replyPageNumber, setReplyPageNumber] = useState(0);
-  const [modalPositionComment, setModalPositionComment] = useState({
+  const modalPositionComment = {
     x: 0,
     y: 0,
-  });
+  };
   const loggedInUser = useAppSelector(state => state.feed.member);
   const [showCommentActionListModal, setShowCommentActionListModal] =
     useState(false);
@@ -115,29 +125,27 @@ const PostDetail = (props: any) => {
 
   // this functions hanldes the post like functionality
   async function postLikeHandler(id: string) {
-    let payload = {
+    const payload = {
       postId: id,
     };
     dispatch(likePostStateHandler(payload.postId) as any);
     // calling like post api
-    let postLikeResponse = await dispatch(
+    const postLikeResponse = await dispatch(
       likePost(
         LikePostRequest.builder().setpostId(payload.postId).build(),
       ) as any,
     );
-    if (postLikeResponse) {
-    }
     return postLikeResponse;
   }
 
   // this functions hanldes the post save functionality
   async function savePostHandler(id: string, saved?: boolean) {
-    let payload = {
+    const payload = {
       postId: id,
     };
     dispatch(savePostStateHandler(payload.postId) as any);
     // calling the save post api
-    let savePostResponse = await dispatch(
+    const savePostResponse = await dispatch(
       savePost(
         SavePostRequest.builder().setpostId(payload.postId).build(),
       ) as any,
@@ -153,11 +161,11 @@ const PostDetail = (props: any) => {
 
   // this function handles the functionality on the pin option
   const handlePinPost = async (id: string, pinned?: boolean) => {
-    let payload = {
+    const payload = {
       postId: id,
     };
     dispatch(pinPostStateHandler(payload.postId) as any);
-    let pinPostResponse = await dispatch(
+    const pinPostResponse = await dispatch(
       pinPost(
         PinPostRequest.builder().setpostId(payload.postId).build(),
       ) as any,
@@ -246,7 +254,7 @@ const PostDetail = (props: any) => {
 
   // this function calls the getPost api
   const getPostData = async () => {
-    let getPostResponse = await dispatch(
+    const getPostResponse = await dispatch(
       getPost(
         GetPostRequest.builder()
           .setpostId(props.route.params[0])
@@ -265,7 +273,7 @@ const PostDetail = (props: any) => {
     repliesResponseCallback: any,
     pageNo: number,
   ) => {
-    let commentsRepliesResponse = await dispatch(
+    const commentsRepliesResponse = await dispatch(
       getComments(
         GetCommentRequest.builder()
           .setpostId(postId)
@@ -280,7 +288,9 @@ const PostDetail = (props: any) => {
     repliesResponseCallback(
       postDetail?.replies &&
         postDetail?.replies[
-          postDetail.replies?.findIndex(item => item.id === commentId)
+          postDetail.replies?.findIndex(
+            (item: LMCommentUI) => item.id === commentId,
+          )
         ]?.replies,
     );
     return commentsRepliesResponse;
@@ -288,11 +298,11 @@ const PostDetail = (props: any) => {
 
   // this functions hanldes the comment like functionality
   const commentLikeHandler = async (postId: string, commentId: string) => {
-    let payload = {
+    const payload = {
       postId: postId,
       commentId: commentId,
     };
-    let commentLikeResponse = await dispatch(
+    const commentLikeResponse = await dispatch(
       likeComment(
         LikeCommentRequest.builder()
           .setcommentId(payload.commentId)
@@ -306,14 +316,14 @@ const PostDetail = (props: any) => {
   // this functions calls the add new comment api
   const addNewComment = async (postId: string) => {
     const currentDate = new Date();
-    let payload = {
+    const payload = {
       postId: postId,
       newComment: commentToAdd,
       tempId: -currentDate.getTime(),
     };
     setCommentToAdd('');
     dispatch(addCommentStateHandler({payload, loggedInUser}) as any);
-    let commentAddResponse = await dispatch(
+    const commentAddResponse = await dispatch(
       addComment(
         AddCommentRequest.builder()
           .setpostId(payload.postId)
@@ -328,7 +338,7 @@ const PostDetail = (props: any) => {
   // this functions calls the add new reply to a comment api
   const addNewReply = async (postId: string, commentId: string) => {
     const currentDate = new Date();
-    let payload = {
+    const payload = {
       postId: postId,
       newComment: commentToAdd,
       tempId: -currentDate.getTime(),
@@ -336,7 +346,7 @@ const PostDetail = (props: any) => {
     };
     setCommentToAdd('');
     dispatch(replyCommentStateHandler({payload, loggedInUser}) as any);
-    let replyAddResponse = await dispatch(
+    const replyAddResponse = await dispatch(
       replyComment(
         ReplyCommentRequest.builder()
           .setPostId(payload.postId)
@@ -444,7 +454,7 @@ const PostDetail = (props: any) => {
   }, []);
 
   return (
-    <SafeAreaView style={{flex:1}}>
+    <SafeAreaView style={{flex: 1}}>
       <KeyboardAvoidingView
         enabled={Platform.OS === 'android' ? true : false}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -524,7 +534,6 @@ const PostDetail = (props: any) => {
                                   val: any,
                                   repliesResponseCallback,
                                 ) => {
-                                  setReplyPageNumber(val);
                                   getCommentsReplies(
                                     item?.postId,
                                     item?.id,

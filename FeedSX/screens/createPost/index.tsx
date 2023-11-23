@@ -15,6 +15,7 @@ import {
 } from '../../utils';
 import {useAppSelector} from '../../store/store';
 import {
+  LMAttachmentUI,
   LMButton,
   LMCarousel,
   LMDocument,
@@ -23,6 +24,7 @@ import {
   LMImage,
   LMInputText,
   LMLinkPreview,
+  LMOGTagsUI,
   LMProfilePicture,
   LMText,
   LMVideo,
@@ -45,7 +47,7 @@ import {
   VIDEO_ATTACHMENT_TYPE,
 } from '../../constants/Strings';
 import {DecodeURLRequest} from '@likeminds.community/feed-js-beta';
-import _, {debounce} from 'lodash';
+import _ from 'lodash';
 import {
   getDecodedUrl,
   setUploadAttachments,
@@ -88,19 +90,21 @@ const CreatePost = () => {
       } else {
         const mediaWithSizeCheck = [];
         // checks the size of media
-        for (const media of res?.assets) {
-          if (
-            media.fileSize > MAX_FILE_SIZE ||
-            media.fileSize < MIN_FILE_SIZE
-          ) {
-            dispatch(
-              showToastMessage({
-                isToast: true,
-                message: FILE_UPLOAD_SIZE_VALIDATION,
-              }) as any,
-            );
-          } else {
-            mediaWithSizeCheck.push(media);
+        if (res?.assets) {
+          for (const media of res.assets) {
+            if (
+              media.fileSize > MAX_FILE_SIZE ||
+              media.fileSize < MIN_FILE_SIZE
+            ) {
+              dispatch(
+                showToastMessage({
+                  isToast: true,
+                  message: FILE_UPLOAD_SIZE_VALIDATION,
+                }) as any,
+              );
+            } else {
+              mediaWithSizeCheck.push(media);
+            }
           }
         }
         const selectedImagesVideos =
@@ -186,7 +190,7 @@ const CreatePost = () => {
     if (Platform.OS === 'ios') {
       setSelectedImageVideo(type);
     } else {
-      let res = await requestStoragePermission();
+      const res = await requestStoragePermission();
       if (res === true) {
         setSelectedImageVideo(type);
       }
@@ -198,7 +202,7 @@ const CreatePost = () => {
     if (Platform.OS === 'ios') {
       setSelectedDocuments();
     } else {
-      let res = await requestStoragePermission();
+      const res = await requestStoragePermission();
       if (res === true) {
         setSelectedDocuments();
       }
@@ -207,7 +211,7 @@ const CreatePost = () => {
 
   // function removes the selected documents
   const removeDocumentAttachment = (index: number) => {
-    let newDocAttachments = [...formattedDocumentAttachments];
+    const newDocAttachments = [...formattedDocumentAttachments];
     if (formattedDocumentAttachments.length === 1) {
       setFormattedDocumentAttachments([]);
       setShowOptions(true);
@@ -219,7 +223,7 @@ const CreatePost = () => {
 
   // function removes multiple images/videos selected
   const removeMediaAttachment = (index: number) => {
-    let newMediaAttachments = [...formattedMediaAttachments];
+    const newMediaAttachments = [...formattedMediaAttachments];
     newMediaAttachments.splice(index, 1);
     setFormattedMediaAttachments(newMediaAttachments);
   };
@@ -236,34 +240,42 @@ const CreatePost = () => {
       const links = detectURLs(text);
 
       if (links && links.length > 0) {
-        const responsePromises = links.map((item: string) => {
-          return new Promise((resolve, reject) => {
-            // calls the decodeUrl api
-            const decodeUrlResponse = dispatch(
-              getDecodedUrl(
-                DecodeURLRequest.builder().setURL(item).build(),
-              ) as any,
-            );
-            decodeUrlResponse
-              .then((res: any) => {
-                resolve(res?.og_tags);
-              })
-              .catch((error: any) => {
-                reject(error);
-              });
-          });
-        });
+        const responsePromises: Promise<LMOGTagsUI>[] = links.map(
+          (item: string) => {
+            return new Promise((resolve, reject) => {
+              // calls the decodeUrl api
+              const decodeUrlResponse = dispatch(
+                getDecodedUrl(
+                  DecodeURLRequest.builder().setURL(item).build(),
+                ) as any,
+              );
+              decodeUrlResponse
+                .then((res: any) => {
+                  resolve(res?.og_tags);
+                })
+                .catch((error: any) => {
+                  reject(error);
+                });
+            });
+          },
+        );
 
         Promise.all(responsePromises)
-          .then(async responses => {
-            if (!responses.includes(undefined)) {
-              const convertedLinkData = await convertLinkMetaData(responses);
+          .then(async (responses: LMOGTagsUI[]) => {
+            const filteredResponses = responses.filter(
+              (response: LMOGTagsUI) => response !== undefined,
+            );
+
+            if (filteredResponses.length > 0) {
+              const convertedLinkData = await convertLinkMetaData(
+                filteredResponses,
+              );
               setFormattedLinkAttachments(convertedLinkData);
               if (!closedOnce) {
                 setShowLinkPreview(true);
               }
             }
-            // Do something with the array of responses
+            // Do something with the array of non-undefined responses
           })
           .catch(error => {
             console.error('An error occurred:', error);
@@ -281,7 +293,7 @@ const CreatePost = () => {
   }, [postContentText]);
 
   // all image/video/document media to be uploaded
-  let allAttachment = [
+  const allAttachment = [
     ...formattedMediaAttachments,
     ...formattedDocumentAttachments,
   ];
@@ -370,7 +382,7 @@ const CreatePost = () => {
             </View>
           ) : formattedMediaAttachments ? (
             formattedMediaAttachments?.length > 1 ? (
-               <LMCarousel
+              <LMCarousel
                 attachments={formattedMediaAttachments}
                 showCancel
                 videoItem={{videoUrl: '', showControls: true}}

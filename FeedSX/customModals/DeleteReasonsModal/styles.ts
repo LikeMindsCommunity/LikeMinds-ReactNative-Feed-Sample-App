@@ -43,20 +43,20 @@ const styles = StyleSheet.create({
     height: 10,
   },
   tagItem: {
-    flexDirection:'row',
+    flexDirection: 'row',
     alignItems: 'center',
-    width:'100%'
+    width: '100%',
   },
   radioBtnView: {
-    width:'15%',
-    alignItems:'center'
+    width: '15%',
+    alignItems: 'center',
   },
   reasonTextView: {
-    borderBottomWidth:1,
-    borderColor:'#e7ebf1',
-    width:'84%',
-    paddingVertical:18
-  }
+    borderBottomWidth: 1,
+    borderColor: '#e7ebf1',
+    width: '84%',
+    paddingVertical: 18,
+  },
 });
 
 export default styles;
