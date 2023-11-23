@@ -1,11 +1,10 @@
 import {StyleSheet} from 'react-native';
 import Layout from '../../constants//Layout';
-import STYLES from '../../constants/Styles';
 
 export const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
-    height: Layout.window.height - Layout.normalize(44)
+    height: Layout.window.height - Layout.normalize(44),
   },
   commentCountText: {
     paddingHorizontal: 15,
@@ -43,7 +42,9 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
   },
   crossIconStyle: {
-    width: 15, height: 15, tintColor: '#000'
+    width: 15,
+    height: 15,
+    tintColor: '#000',
   },
   textInputStyle: {
     margin: 0,
@@ -63,6 +64,6 @@ export const styles = StyleSheet.create({
     color: '#222020',
     position: 'absolute',
     bottom: 0,
-    width: '100%'
-  }
+    width: '100%',
+  },
 });

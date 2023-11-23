@@ -8,7 +8,7 @@ import {showToastMessage} from '../../store/actions/toast';
 
 const LMToast = () => {
   const dispatch = useDispatch();
-  const {isToast, message} = useAppSelector(state => state.loader);
+  const {message} = useAppSelector(state => state.loader);
 
   // handles the visibility of the toast
   useEffect(() => {
@@ -46,7 +46,7 @@ const LMToast = () => {
 
   return (
     // toast component
-      <Toast config={toastConfig} />
+    <Toast config={toastConfig} />
   );
 };
 

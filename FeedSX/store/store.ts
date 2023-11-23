@@ -4,16 +4,16 @@ import thunk, {ThunkMiddleware} from 'redux-thunk';
 import apiMiddleware from './apiMiddleware';
 import {feedReducer} from './reducers/feedReducer';
 import {loader} from './reducers/loader';
-import { postLikesReducer } from './reducers/postLikesReducer';
-import { createPostReducer } from './reducers/createPostReducer';
-import { postDetailReducer } from './reducers/postDetailReducer';
+import {postLikesReducer} from './reducers/postLikesReducer';
+import {createPostReducer} from './reducers/createPostReducer';
+import {postDetailReducer} from './reducers/postDetailReducer';
 
 const rootReducer = combineReducers({
   feed: feedReducer,
   loader: loader,
   postLikes: postLikesReducer,
   createPost: createPostReducer,
-  postDetail: postDetailReducer
+  postDetail: postDetailReducer,
 });
 
 const store = configureStore({

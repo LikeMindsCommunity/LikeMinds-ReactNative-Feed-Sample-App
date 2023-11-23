@@ -4,9 +4,7 @@ import {START_LOADING, STOP_LOADING} from './types/loader';
 
 export const NETWORK_FAILED = 'Network request failed';
 
-type FuncType = (payload: any) => Promise<Response>;
-
-async function invokeAPI(func: Function, payload: any, name = '') {
+async function invokeAPI(func: Function) {
   if (func === undefined) {
     return;
   }
@@ -16,21 +14,15 @@ async function invokeAPI(func: Function, payload: any, name = '') {
 
 export const CALL_API = 'Call API';
 
-const apiMiddleware: Middleware = store => next => async action => {
+const apiMiddleware: Middleware = () => next => async action => {
   // So the middleware doesn't get applied to every single action
   if (typeof action[CALL_API] === 'undefined') {
     return next(action);
   }
 
-  const {
-    func,
-    types = [],
-    showLoader = false,
-    body,
-    name = '',
-  } = action[CALL_API];
+  const {func, types = [], showLoader = false} = action[CALL_API];
 
-  const [requestType, successType, errorType] = types;
+  const [requestType, successType] = types;
 
   //   const { authReducer: auth } = store.getState();
   requestType && next({type: requestType});
@@ -39,7 +31,7 @@ const apiMiddleware: Middleware = store => next => async action => {
       next({type: START_LOADING});
     }
 
-    const responseBody = await invokeAPI(func, JSON.stringify(body), name);
+    const responseBody = await invokeAPI(func);
 
     successType &&
       next({

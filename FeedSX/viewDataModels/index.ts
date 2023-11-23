@@ -17,14 +17,25 @@ import {
   VIDEO_ATTACHMENT_TYPE,
 } from '../constants/Strings';
 import {IComment} from '@likeminds.community/feed-js-beta';
+import {
+  LMAttachmentMetaUI,
+  LMAttachmentUI,
+  LMCommentUI,
+  LMLikeUI,
+  LMMenuItemsUI,
+  LMOGTagsUI,
+  LMPostUI,
+  LMSDKClientInfoUI,
+  LMUserUI,
+} from '../../LikeMinds-ReactNative-Feed-UI';
 
 /**
  * @param data: [GetFeedResponse]
  * @returns list of [LMPostUI]
  */
 export function convertUniversalFeedPosts(data: GetFeedResponse): LMPostUI[] {
-  let postData = data.posts;
-  let userData = data.users;
+  const postData = data.posts;
+  const userData = data.users;
   return postData?.map((item: IPost) => {
     return convertToLMPostUI(item, userData);
   });
@@ -164,8 +175,8 @@ export function convertToLMSDKClientInfoUI(data: IUser): LMSDKClientInfoUI {
  * @returns list of [LMLikeUI]
  */
 export function convertToLMLikesList(data: GetPostLikesResponse): LMLikeUI[] {
-  let likesListData = data?.likes;
-  let userData = data?.users;
+  const likesListData = data?.likes;
+  const userData = data?.users;
   return likesListData?.map((item: Like) => {
     return convertToLMLikeUI(item, userData);
   });

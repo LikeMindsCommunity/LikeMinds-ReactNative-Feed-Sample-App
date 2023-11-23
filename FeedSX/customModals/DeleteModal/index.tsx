@@ -34,6 +34,7 @@ import {
   deleteComment,
   deleteCommentStateHandler,
 } from '../../store/actions/postDetail';
+import {LMCommentUI, LMPostUI} from '../../../LikeMinds-ReactNative-Feed-UI';
 
 // delete modal's props
 interface DeleteModalProps {
@@ -64,13 +65,13 @@ const DeleteModal = ({
     if (!deletionReason && loggedInUser.userUniqueId != postDetail?.userId) {
       showToast();
     } else {
-      let payload = {
+      const payload = {
         deleteReason: otherReason ? otherReason : deletionReason,
         postId: postDetail?.id,
       };
       displayModal(false);
       dispatch(deletePostStateHandler(payload.postId) as any);
-      let deletePostResponse = await dispatch(
+      const deletePostResponse = await dispatch(
         deletePost(
           DeletePostRequest.builder()
             .setdeleteReason(payload.deleteReason)
@@ -105,7 +106,7 @@ const DeleteModal = ({
     if (!deletionReason && loggedInUser.userUniqueId != commentDetail?.userId) {
       showToast();
     } else {
-      let payload = {
+      const payload = {
         deleteReason: otherReason ? otherReason : deletionReason,
         commentId: commentDetail?.id ? commentDetail.id : '',
         postId: commentDetail?.postId ? commentDetail.postId : '',
@@ -113,7 +114,7 @@ const DeleteModal = ({
       displayModal(false);
       dispatch(deleteCommentStateHandler(payload) as any);
       try {
-        let deleteCommentResponse = await dispatch(
+        const deleteCommentResponse = await dispatch(
           deleteComment(
             DeleteCommentRequest.builder()
               .setcommentId(payload.commentId)

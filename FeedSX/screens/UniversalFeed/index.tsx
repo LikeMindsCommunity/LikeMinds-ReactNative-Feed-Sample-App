@@ -1,6 +1,5 @@
 import React, {useEffect, useLayoutEffect, useRef, useState} from 'react';
 import {
-  Alert,
   Image,
   Platform,
   RefreshControl,
@@ -36,10 +35,12 @@ import {useAppSelector} from '../../store/store';
 import {FlashList} from '@shopify/flash-list';
 import {styles} from './styles';
 import {
+  LMAttachmentUI,
   LMHeader,
   LMIcon,
   LMImage,
   LMPost,
+  LMPostUI,
   LMVideo,
 } from '../../../LikeMinds-ReactNative-Feed-UI';
 import {NavigationService} from '../../navigation';
@@ -88,9 +89,8 @@ const UniversalFeed = () => {
   );
   const showLoader = useAppSelector(state => state.loader.count);
   const [feedPageNumber, setFeedPageNumber] = useState(1);
-  const [communityId, setCommunityId] = useState('');
   const [accessToken, setAccessToken] = useState('');
-  const [modalPosition, setModalPosition] = useState({x: 0, y: 0});
+  const modalPosition = {x: 0, y: 0};
   const [showActionListModal, setShowActionListModal] = useState(false);
   const [selectedMenuItemPostId, setSelectedMenuItemPostId] = useState('');
   const [showDeleteModal, setDeleteModal] = useState(false);
@@ -113,19 +113,18 @@ const UniversalFeed = () => {
     // const UUID = await AsyncStorage.getItem('userUniqueID');
     const UUID = '0e53748a-969b-44c6-b8fa-a4c8e1eb1208';
 
-    let payload = {
+    const payload = {
       userUniqueId: UUID, // user unique ID
       userName: 'abc', // user name
       isGuest: false,
     };
 
     // calling initiateUser API
-    let initiateResponse = await dispatch(initiateUser(payload) as any);
-    if (!!initiateResponse) {
+    const initiateResponse = await dispatch(initiateUser(payload) as any);
+    if (initiateResponse) {
       // calling getMemberState API
       await dispatch(getMemberState() as any);
       setFeedPageNumber(1);
-      setCommunityId(initiateResponse?.community?.id);
       setAccessToken(initiateResponse?.accessToken);
     }
     return initiateResponse;
@@ -133,12 +132,12 @@ const UniversalFeed = () => {
 
   // this functions gets universal feed data
   async function fetchFeed() {
-    let payload = {
+    const payload = {
       page: feedPageNumber,
       pageSize: 20,
     };
     // calling getFeed API
-    let getFeedResponse = await dispatch(
+    const getFeedResponse = await dispatch(
       getFeed(
         GetFeedRequest.builder()
           .setpage(payload.page)
@@ -177,7 +176,7 @@ const UniversalFeed = () => {
     );
     // Wait for all upload operations to complete
     const updatedAttachments = await Promise.all(uploadPromises);
-    let addPostResponse = await dispatch(
+    const addPostResponse = await dispatch(
       addPost(
         AddPostRequest.builder()
           .setAttachments([...updatedAttachments, ...linkAttachments])
@@ -209,30 +208,28 @@ const UniversalFeed = () => {
 
   // this functions hanldes the post like functionality
   async function postLikeHandler(id: string) {
-    let payload = {
+    const payload = {
       postId: id,
     };
     dispatch(likePostStateHandler(payload.postId) as any);
     // calling like post api
-    let postLikeResponse = await dispatch(
+    const postLikeResponse = await dispatch(
       likePost(
         LikePostRequest.builder().setpostId(payload.postId).build(),
       ) as any,
     );
-    if (postLikeResponse) {
-    }
     return postLikeResponse;
   }
 
   // this functions hanldes the post save functionality
   async function savePostHandler(id: string, saved?: boolean) {
-    let payload = {
+    const payload = {
       postId: id,
     };
     try {
       dispatch(savePostStateHandler(payload.postId) as any);
       // calling the save post api
-      let savePostResponse = await dispatch(
+      const savePostResponse = await dispatch(
         savePost(
           SavePostRequest.builder().setpostId(payload.postId).build(),
         ) as any,
@@ -265,7 +262,9 @@ const UniversalFeed = () => {
       fetchFeed();
       // handles members right
       if (memberData?.state != 1) {
-        let members_right = memberRight?.find((item: any) => item?.state === 9);
+        const members_right = memberRight?.find(
+          (item: any) => item?.state === 9,
+        );
         if (members_right?.isSelected === false) {
           setShowCreatePost(false);
         }
@@ -280,11 +279,11 @@ const UniversalFeed = () => {
 
   // this function handles the functionality on the pin option
   const handlePinPost = async (id: string, pinned?: boolean) => {
-    let payload = {
+    const payload = {
       postId: id,
     };
     dispatch(pinPostStateHandler(payload.postId) as any);
-    let pinPostResponse = await dispatch(
+    const pinPostResponse = await dispatch(
       pinPost(
         PinPostRequest.builder().setpostId(payload.postId).build(),
       ) as any,
@@ -347,7 +346,7 @@ const UniversalFeed = () => {
     return `${id}${itemLiked}${itemPinned}${itemComments}${itemSaved}`;
   };
 
-  // this function is executed on pull to refresh 
+  // this function is executed on pull to refresh
   const onRefresh = async () => {
     setRefreshing(true);
     setLocalRefresh(true);

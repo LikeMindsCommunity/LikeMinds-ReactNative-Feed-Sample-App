@@ -101,7 +101,7 @@ export const getFeed = (payload?: any) => async (dispatch: Dispatch) => {
   }
 };
 
-// refresh feed API action 
+// refresh feed API action
 export const refreshFeed = (payload?: any) => async (dispatch: Dispatch) => {
   try {
     return await dispatch({
@@ -127,7 +127,7 @@ export const clearFeed = () => async (dispatch: Dispatch) => {
   try {
     return await dispatch({
       type: CLEAR_FEED,
-      body: []
+      body: [],
     });
   } catch (error) {
     Alert.alert(`${error}`);
@@ -290,7 +290,7 @@ export const pinPostStateHandler =
     } catch (error) {
       Alert.alert(`${error}`);
     }
-};
+  };
 
 // video auto play/pause handler action
 export const autoPlayPostVideo =
@@ -304,4 +304,4 @@ export const autoPlayPostVideo =
     } catch (error) {
       Alert.alert(`${error}`);
     }
-};
+  };
