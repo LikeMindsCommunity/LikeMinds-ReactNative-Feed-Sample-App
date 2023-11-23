@@ -24,14 +24,8 @@ module.exports = {
   },
   plugins: ['@typescript-eslint'],
   rules: {
-    '@typescript-eslint/indent': 'off',
+    '@typescript-eslint/indent': ['error', 2],
     '@typescript-eslint/no-unused-vars': 'error',
-    '@typescript-eslint/no-explicit-any': 'off',
-    'no-dupe-keys': 'off',
-    'no-useless-escape': 'off',
-    '@typescript-eslint/no-var-requires': 'off',
-    'prefer-const': 'off',
-    'no-unsafe-optional-chaining': 'off',
-    '@typescript-eslint/ban-types': 'off',
+    '@typescript-eslint/no-explicit-any': 'error',
   },
 };

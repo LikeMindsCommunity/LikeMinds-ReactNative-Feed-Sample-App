@@ -4,7 +4,9 @@ import {START_LOADING, STOP_LOADING} from './types/loader';
 
 export const NETWORK_FAILED = 'Network request failed';
 
-async function invokeAPI(func: Function) {
+type FuncType = (payload: any) => Promise<Response>;
+
+async function invokeAPI(func: FuncType) {
   if (func === undefined) {
     return;
   }

@@ -6,7 +6,7 @@ import {
   IOgTag,
   IPost,
   IUser,
-} from '@likeminds.community/feed-js';
+} from '@likeminds.community/feed-js-beta';
 import {GetPostLikesResponse} from '@likeminds.community/feed-js/dist/post/model/GetPostLikesResponse';
 import Like from '@likeminds.community/feed-js/dist/post/model/Like';
 import {DocumentMetaData, ImageVideoMetaData} from '../models/addPostMetaData';

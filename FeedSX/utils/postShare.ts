@@ -16,7 +16,7 @@ export const postShare = async () => {
     } else if (result.action === Share.dismissedAction) {
       // dismissed
     }
-  } catch (error: any) {
-    Alert.alert(error.message);
+  } catch (error) {
+    Alert.alert((error as Error).message);
   }
 };

@@ -4,7 +4,7 @@ import {DETECT_LINK_REGEX} from '../constants/Regex';
 export function detectURLs(text: string) {
   const mySplitArrayText = text.split(/\s+|\n/);
 
-  const linksArray: any = [];
+  const linksArray: Array<string> = [];
   const urlRegex = DETECT_LINK_REGEX;
 
   mySplitArrayText?.map(foundUrl => {
