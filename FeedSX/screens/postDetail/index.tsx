@@ -288,7 +288,9 @@ const PostDetail = (props: IProps) => {
     repliesResponseCallback(
       postDetail?.replies &&
         postDetail?.replies[
-          postDetail.replies?.findIndex((item: any) => item.id === commentId)
+          postDetail.replies?.findIndex(
+            (item: LMCommentUI) => item.id === commentId,
+          )
         ]?.replies,
     );
     return commentsRepliesResponse;
