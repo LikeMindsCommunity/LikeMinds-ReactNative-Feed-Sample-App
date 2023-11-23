@@ -24,6 +24,7 @@ import {
   LMImage,
   LMInputText,
   LMLinkPreview,
+  LMOGTagsUI,
   LMProfilePicture,
   LMText,
   LMVideo,
@@ -89,19 +90,21 @@ const CreatePost = () => {
       } else {
         const mediaWithSizeCheck = [];
         // checks the size of media
-        for (const media of res?.assets) {
-          if (
-            media.fileSize > MAX_FILE_SIZE ||
-            media.fileSize < MIN_FILE_SIZE
-          ) {
-            dispatch(
-              showToastMessage({
-                isToast: true,
-                message: FILE_UPLOAD_SIZE_VALIDATION,
-              }) as any,
-            );
-          } else {
-            mediaWithSizeCheck.push(media);
+        if (res?.assets) {
+          for (const media of res.assets) {
+            if (
+              media.fileSize > MAX_FILE_SIZE ||
+              media.fileSize < MIN_FILE_SIZE
+            ) {
+              dispatch(
+                showToastMessage({
+                  isToast: true,
+                  message: FILE_UPLOAD_SIZE_VALIDATION,
+                }) as any,
+              );
+            } else {
+              mediaWithSizeCheck.push(media);
+            }
           }
         }
         const selectedImagesVideos =
@@ -237,34 +240,42 @@ const CreatePost = () => {
       const links = detectURLs(text);
 
       if (links && links.length > 0) {
-        const responsePromises = links.map((item: string) => {
-          return new Promise((resolve, reject) => {
-            // calls the decodeUrl api
-            const decodeUrlResponse = dispatch(
-              getDecodedUrl(
-                DecodeURLRequest.builder().setURL(item).build(),
-              ) as any,
-            );
-            decodeUrlResponse
-              .then((res: any) => {
-                resolve(res?.og_tags);
-              })
-              .catch((error: any) => {
-                reject(error);
-              });
-          });
-        });
+        const responsePromises: Promise<LMOGTagsUI>[] = links.map(
+          (item: string) => {
+            return new Promise((resolve, reject) => {
+              // calls the decodeUrl api
+              const decodeUrlResponse = dispatch(
+                getDecodedUrl(
+                  DecodeURLRequest.builder().setURL(item).build(),
+                ) as any,
+              );
+              decodeUrlResponse
+                .then((res: any) => {
+                  resolve(res?.og_tags);
+                })
+                .catch((error: any) => {
+                  reject(error);
+                });
+            });
+          },
+        );
 
         Promise.all(responsePromises)
-          .then(async responses => {
-            if (!responses.includes(undefined)) {
-              const convertedLinkData = await convertLinkMetaData(responses);
+          .then(async (responses: LMOGTagsUI[]) => {
+            const filteredResponses = responses.filter(
+              (response: LMOGTagsUI) => response !== undefined,
+            );
+
+            if (filteredResponses.length > 0) {
+              const convertedLinkData = await convertLinkMetaData(
+                filteredResponses,
+              );
               setFormattedLinkAttachments(convertedLinkData);
               if (!closedOnce) {
                 setShowLinkPreview(true);
               }
             }
-            // Do something with the array of responses
+            // Do something with the array of non-undefined responses
           })
           .catch(error => {
             console.error('An error occurred:', error);

@@ -50,7 +50,7 @@ const DeleteReasonsModal = ({
   }, [visible]);
 
   // this is the callback function that takes the selected reason tag to the delete modal
-  const reasonSelection = (selectedId: any) => {
+  const reasonSelection = (selectedId: string) => {
     selectedReason(selectedId);
     setSelectedIndex(-1);
     handleDeleteModal(true);

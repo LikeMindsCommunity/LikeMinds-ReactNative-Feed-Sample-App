@@ -66,7 +66,7 @@ export function feedReducer(state = initialState, action: any) {
       const updatedFeed = state.feed;
       // this gets the index of post that is liked
       const likedPostIndex = updatedFeed.findIndex(
-        (item: any) => item?.id === action.body,
+        (item: LMPostUI) => item?.id === action.body,
       );
       // this updates the isLiked value
       updatedFeed[likedPostIndex]['isLiked'] =
@@ -143,7 +143,7 @@ export function feedReducer(state = initialState, action: any) {
       const updatedFeed = state.feed;
       // this gets the index of the post that is deleted
       const deletedPostIndex = updatedFeed.findIndex(
-        (item: any) => item?.id === action.body,
+        (item: LMPostUI) => item?.id === action.body,
       );
       // removes that post from the data
       updatedFeed.splice(deletedPostIndex, 1);
