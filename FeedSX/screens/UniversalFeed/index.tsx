@@ -1,4 +1,10 @@
-import React, {useEffect, useLayoutEffect, useRef, useState} from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import {
   Image,
   Platform,
@@ -8,7 +14,6 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import {lmFeedClient} from '../../..';
 import {
   AddPostRequest,
   GetFeedRequest,
@@ -30,7 +35,6 @@ import {
   savePost,
   savePostStateHandler,
 } from '../../store/actions/feed';
-import {navigationRef} from '../../navigation/RootNavigation';
 import {useAppSelector} from '../../store/store';
 import {FlashList} from '@shopify/flash-list';
 import {styles} from './styles';
@@ -102,12 +106,12 @@ const UniversalFeed = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [localRefresh, setLocalRefresh] = useState(false);
 
-  let uploadingMediaAttachmentType = mediaAttachmemnts[0]?.attachmentType;
-  let uploadingMediaAttachment = mediaAttachmemnts[0]?.attachmentMeta.url;
+  const uploadingMediaAttachmentType = mediaAttachmemnts[0]?.attachmentType;
+  const uploadingMediaAttachment = mediaAttachmemnts[0]?.attachmentMeta.url;
   const listRef = useRef<FlashList<LMPostUI>>(null);
 
   // this function calls initiate user API and sets the access token and community id
-  async function getInitialData() {
+  const getInitialData = useCallback(async () => {
     //this line of code is for the sample app only, pass your userUniqueID instead of this.
     // todo: remove static data
     // const UUID = await AsyncStorage.getItem('userUniqueID');
@@ -128,10 +132,10 @@ const UniversalFeed = () => {
       setAccessToken(initiateResponse?.accessToken);
     }
     return initiateResponse;
-  }
+  }, [dispatch]);
 
   // this functions gets universal feed data
-  async function fetchFeed() {
+  const fetchFeed = useCallback(async () => {
     const payload = {
       page: feedPageNumber,
       pageSize: 20,
@@ -146,23 +150,24 @@ const UniversalFeed = () => {
       ) as any,
     );
     return getFeedResponse;
-  }
+  }, [dispatch, feedPageNumber]);
 
-  // this useEffect handles the execution of addPost api
-  useEffect(() => {
-    // this checks if any media is selected to be posted and then executes the addPost api
-    if (
-      mediaAttachmemnts.length > 0 ||
-      linkAttachments.length > 0 ||
-      postContent != ''
-    ) {
-      setPostUploading(true);
-      postAdd();
-    }
-  }, [mediaAttachmemnts, linkAttachments, postContent]);
+  // this function is executed on pull to refresh
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    setLocalRefresh(true);
+    // calling getFeed API
+    await dispatch(
+      refreshFeed(
+        GetFeedRequest.builder().setpage(1).setpageSize(20).build(),
+      ) as any,
+    );
+    setLocalRefresh(false);
+    setRefreshing(false);
+  }, [dispatch]);
 
   // this function adds a new post
-  const postAdd = async () => {
+  const postAdd = useCallback(async () => {
     const uploadPromises = mediaAttachmemnts?.map(
       async (item: LMAttachmentUI) => {
         return uploadFilesToAWS(
@@ -193,7 +198,6 @@ const UniversalFeed = () => {
           conText: '',
         }) as any,
       );
-      // await dispatch(clearFeed() as any)
       await onRefresh();
       listRef.current?.scrollToIndex({animated: true, index: 0});
       dispatch(
@@ -204,7 +208,27 @@ const UniversalFeed = () => {
       );
     }
     return addPostResponse;
-  };
+  }, [
+    dispatch,
+    linkAttachments,
+    mediaAttachmemnts,
+    memberData?.userUniqueId,
+    postContent,
+    onRefresh,
+  ]);
+
+  // this useEffect handles the execution of addPost api
+  useEffect(() => {
+    // this checks if any media is selected to be posted and then executes the addPost api
+    if (
+      mediaAttachmemnts.length > 0 ||
+      linkAttachments.length > 0 ||
+      postContent !== ''
+    ) {
+      setPostUploading(true);
+      postAdd();
+    }
+  }, [mediaAttachmemnts, linkAttachments, postContent, postAdd]);
 
   // this functions hanldes the post like functionality
   async function postLikeHandler(id: string) {
@@ -253,7 +277,7 @@ const UniversalFeed = () => {
 
   useLayoutEffect(() => {
     getInitialData();
-  }, [navigationRef, lmFeedClient]);
+  }, [getInitialData]);
 
   // this calls the getFeed api whenever the page number gets changed
   useEffect(() => {
@@ -261,7 +285,7 @@ const UniversalFeed = () => {
       // fetch feed
       fetchFeed();
       // handles members right
-      if (memberData?.state != 1) {
+      if (memberData?.state !== 1) {
         const members_right = memberRight?.find(
           (item: any) => item?.state === 9,
         );
@@ -270,7 +294,7 @@ const UniversalFeed = () => {
         }
       }
     }
-  }, [accessToken, feedPageNumber]);
+  }, [accessToken, feedPageNumber, fetchFeed, memberData?.state, memberRight]);
 
   // this function closes the post action list modal
   const closePostActionListModal = () => {
@@ -346,33 +370,23 @@ const UniversalFeed = () => {
     return `${id}${itemLiked}${itemPinned}${itemComments}${itemSaved}`;
   };
 
-  // this function is executed on pull to refresh
-  const onRefresh = async () => {
-    setRefreshing(true);
-    setLocalRefresh(true);
-    // calling getFeed API
-    await dispatch(
-      refreshFeed(
-        GetFeedRequest.builder().setpage(1).setpageSize(20).build(),
-      ) as any,
-    );
-    setLocalRefresh(false);
-    setRefreshing(false);
+  const renderLoader = () => {
+    return <LMLoader />;
   };
 
   return (
-    <SafeAreaView style={{height: '100%'}}>
+    <SafeAreaView style={styles.mainContainer}>
       {/* header */}
       <LMHeader heading={APP_TITLE} />
       {/* post uploading section */}
       {postUploading && (
         <View style={styles.postUploadingView}>
-          <View style={{flexDirection: 'row', alignItems: 'center'}}>
+          <View style={styles.uploadingPostContentView}>
             {/* post uploading media preview */}
             {uploadingMediaAttachmentType === IMAGE_ATTACHMENT_TYPE && (
               <LMImage
                 imageUrl={uploadingMediaAttachment}
-                imageStyle={{backgroundColor: '#fff'}}
+                imageStyle={styles.uploadingImageStyle}
                 boxStyle={styles.uploadingImageVideoBox}
                 width={styles.uploadingImageVideoBox.width}
                 height={styles.uploadingImageVideoBox.height}
@@ -381,7 +395,7 @@ const UniversalFeed = () => {
             {uploadingMediaAttachmentType === VIDEO_ATTACHMENT_TYPE && (
               <LMVideo
                 videoUrl={uploadingMediaAttachment}
-                videoStyle={{backgroundColor: '#fff'}}
+                videoStyle={styles.uploadingVideoStyle}
                 boxStyle={styles.uploadingImageVideoBox}
                 width={styles.uploadingImageVideoBox.width}
                 height={styles.uploadingImageVideoBox.height}
@@ -393,12 +407,12 @@ const UniversalFeed = () => {
               <LMIcon
                 assetPath={require('../../assets/images/pdf_icon3x.png')}
                 type="png"
-                iconStyle={{marginRight: 2, resizeMode: 'contain'}}
+                iconStyle={styles.uploadingDocumentStyle}
                 height={styles.uploadingPdfIconSize.height}
                 width={styles.uploadingPdfIconSize.width}
               />
             )}
-            <Text style={{color: '#333333'}}>{POST_UPLOADING}</Text>
+            <Text style={styles.postUploadingText}>{POST_UPLOADING}</Text>
           </View>
           {/* progress loader */}
           <LMLoader
@@ -423,11 +437,11 @@ const UniversalFeed = () => {
             <TouchableOpacity
               activeOpacity={0.8}
               onPress={() => {
-                dispatch(clearPostDetail() as any),
-                  NavigationService.navigate(POST_DETAIL, [
-                    item?.id,
-                    NAVIGATED_FROM_POST,
-                  ]);
+                dispatch(clearPostDetail() as any);
+                NavigationService.navigate(POST_DETAIL, [
+                  item?.id,
+                  NAVIGATED_FROM_POST,
+                ]);
               }}>
               <LMPost
                 post={item}
@@ -501,9 +515,7 @@ const UniversalFeed = () => {
           onEndReached={() => {
             setFeedPageNumber(feedPageNumber + 1);
           }}
-          ListFooterComponent={() => {
-            return <>{showLoader > 0 && <LMLoader />}</>;
-          }}
+          ListFooterComponent={<>{showLoader > 0 && renderLoader()}</>}
           onViewableItemsChanged={({changed, viewableItems}) => {
             if (changed) {
               if (viewableItems) {
@@ -516,20 +528,18 @@ const UniversalFeed = () => {
           viewabilityConfig={{viewAreaCoveragePercentThreshold: 60}}
         />
       ) : (
-        <View
-          style={{
-            flex: 1,
-            justifyContent: 'center',
-            marginBottom: 30,
-          }}>
-          {!localRefresh && <LMLoader />}
-        </View>
+        <View style={styles.loaderView}>{!localRefresh && <LMLoader />}</View>
       )}
       {/* create post button section */}
       <TouchableOpacity
         activeOpacity={0.8}
         disabled={feedData.length > 0 ? false : true}
-        style={[styles.newPostButtonView, {opacity: showCreatePost ? 1 : 0.8}]}
+        style={[
+          styles.newPostButtonView,
+          showCreatePost
+            ? styles.newPostButtonEnable
+            : styles.newPostButtonDisable,
+        ]}
         // handles post uploading status and member rights to create post
         onPress={() =>
           showCreatePost
@@ -551,7 +561,7 @@ const UniversalFeed = () => {
         <Image
           source={require('../../assets/images/add_post_icon3x.png')}
           resizeMode={'contain'}
-          style={{width: 30, height: 30}}
+          style={styles.newPostButtonIcon}
         />
         <Text style={styles.newPostText}>NEW POST</Text>
       </TouchableOpacity>

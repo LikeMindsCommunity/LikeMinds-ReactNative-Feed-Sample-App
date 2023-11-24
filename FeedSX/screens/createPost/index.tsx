@@ -290,7 +290,7 @@ const CreatePost = () => {
     return () => {
       debouncedSearch.cancel(); // Cleanup the debounced function
     };
-  }, [postContentText]);
+  }, [postContentText, dispatch, closedOnce]);
 
   // all image/video/document media to be uploaded
   const allAttachment = [
@@ -313,18 +313,17 @@ const CreatePost = () => {
             disabled={
               allAttachment?.length > 0 ||
               formattedLinkAttachments?.length > 0 ||
-              postContentText.trim() != ''
+              postContentText.trim() !== ''
                 ? false
                 : true
             }
-            style={{
-              opacity:
-                allAttachment?.length > 0 ||
-                formattedLinkAttachments?.length > 0 ||
-                postContentText.trim() != ''
-                  ? 1
-                  : 0.5,
-            }}
+            style={
+              allAttachment?.length > 0 ||
+              formattedLinkAttachments?.length > 0 ||
+              postContentText.trim() !== ''
+                ? styles.postButtonEnable
+                : styles.postButtonDisabled
+            }
             onPress={() => {
               // store the media for uploading and navigate to feed screen
               dispatch(
@@ -336,13 +335,16 @@ const CreatePost = () => {
               );
               NavigationService.goBack();
             }}>
-            <Text style={{color: '#5046E5', fontSize: 16, fontWeight: '500'}}>
-              {ADD_POST_TEXT}
-            </Text>
+            <Text style={styles.postTextStyle}>{ADD_POST_TEXT}</Text>
           </TouchableOpacity>
         }
       />
-      <ScrollView style={{flex: 1, marginBottom: showOptions ? 125 : 0}}>
+      <ScrollView
+        style={
+          showOptions
+            ? styles.scrollViewStyleWithOptions
+            : styles.scrollViewStyleWithoutOptions
+        }>
         {/* user profile section */}
         <View style={styles.profileContainer}>
           {/* profile image */}
@@ -369,16 +371,9 @@ const CreatePost = () => {
         <View>
           {/* multi media selection section */}
           {showSelecting ? (
-            <View
-              style={{
-                height: 300,
-                justifyContent: 'center',
-                alignItems: 'center',
-              }}>
+            <View style={styles.selectingMediaView}>
               <LMLoader size={10} />
-              <Text style={{color: '#666666', marginTop: 12}}>
-                Fetching Media
-              </Text>
+              <Text style={styles.selectingMediaText}>Fetching Media</Text>
             </View>
           ) : formattedMediaAttachments ? (
             formattedMediaAttachments?.length > 1 ? (
@@ -476,7 +471,8 @@ const CreatePost = () => {
               }}>
               <LMIcon
                 type="png"
-                assetPath={require('../../assets/images/gallery_icon3x.png')}></LMIcon>
+                assetPath={require('../../assets/images/gallery_icon3x.png')}
+              />
               <LMText
                 text={ADD_IMAGES}
                 textStyle={styles.selectionOptionstext}
@@ -491,7 +487,8 @@ const CreatePost = () => {
               }}>
               <LMIcon
                 type="png"
-                assetPath={require('../../assets/images/video_icon3x.png')}></LMIcon>
+                assetPath={require('../../assets/images/video_icon3x.png')}
+              />
               <LMText
                 text={ADD_VIDEOS}
                 textStyle={styles.selectionOptionstext}
@@ -506,7 +503,8 @@ const CreatePost = () => {
               }}>
               <LMIcon
                 type="png"
-                assetPath={require('../../assets/images/paperClip_icon3x.png')}></LMIcon>
+                assetPath={require('../../assets/images/paperClip_icon3x.png')}
+              />
               <LMText
                 text={ADD_FILES}
                 textStyle={styles.selectionOptionstext}

@@ -93,6 +93,9 @@ const styles = StyleSheet.create({
     fontFamily: STYLES.$FONT_FAMILY.REGULAR,
     color: STYLES.$COLORS.whiteTextColor,
   },
+  asteriskTextStyle: {
+    color: 'red',
+  },
 });
 
 export default styles;

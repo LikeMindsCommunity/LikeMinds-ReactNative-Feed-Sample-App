@@ -1,5 +1,5 @@
 import {View, SafeAreaView} from 'react-native';
-import React, {useEffect} from 'react';
+import React, {useCallback, useEffect} from 'react';
 import {FlashList} from '@shopify/flash-list';
 import {
   GetCommentLikesRequest,
@@ -16,48 +16,55 @@ import {
 import {NavigationService} from '../../navigation';
 import LMLoader from '../../../LikeMinds-ReactNative-Feed-UI/src/base/LMLoader';
 import {COMMENT_LIKES, POST_LIKES} from '../../constants/Strings';
+import {styles} from './styles';
 
 const LikesList = (props: any) => {
   const dispatch = useDispatch();
   const {postLike, totalLikes} = useAppSelector(state => state.postLikes);
 
   // this function calls the post likes api
-  async function postLikesList(id: string) {
-    const payload = {
-      postId: id,
-    };
-    // calling post likes api
-    const postLikesResponse = await dispatch(
-      postLikes(
-        GetPostLikesRequest.builder()
-          .setpostId(payload.postId)
-          .setpage(1)
-          .setpageSize(10)
-          .build(),
-      ) as any,
-    );
-    return postLikesResponse;
-  }
+  const postLikesList = useCallback(
+    async (id: string) => {
+      const payload = {
+        postId: id,
+      };
+      // calling post likes api
+      const postLikesResponse = await dispatch(
+        postLikes(
+          GetPostLikesRequest.builder()
+            .setpostId(payload.postId)
+            .setpage(1)
+            .setpageSize(10)
+            .build(),
+        ) as any,
+      );
+      return postLikesResponse;
+    },
+    [dispatch],
+  );
 
   // this function calls the comment likes api
-  async function commentLikesList(id: string, postId: string) {
-    const payload = {
-      commentId: id,
-      postId: postId,
-    };
-    // calling post likes api
-    const commentLikesResponse = await dispatch(
-      commentLikes(
-        GetCommentLikesRequest.builder()
-          .setcommentId(payload.commentId)
-          .setpage(1)
-          .setpageSize(10)
-          .setpostId(payload.postId)
-          .build(),
-      ) as any,
-    );
-    return commentLikesResponse;
-  }
+  const commentLikesList = useCallback(
+    async (id: string, postId: string) => {
+      const payload = {
+        commentId: id,
+        postId: postId,
+      };
+      // calling post likes api
+      const commentLikesResponse = await dispatch(
+        commentLikes(
+          GetCommentLikesRequest.builder()
+            .setcommentId(payload.commentId)
+            .setpage(1)
+            .setpageSize(10)
+            .setpostId(payload.postId)
+            .build(),
+        ) as any,
+      );
+      return commentLikesResponse;
+    },
+    [dispatch],
+  );
 
   // this calls the post likes list function to render the data
   useEffect(() => {
@@ -67,10 +74,10 @@ const LikesList = (props: any) => {
     if (props.route.params[0] === POST_LIKES) {
       postLikesList(props.route.params[1]);
     }
-  }, []);
+  }, [commentLikesList, postLikesList, props.route.params]);
 
   return (
-    <SafeAreaView style={{backgroundColor: '#fff', flex: 1}}>
+    <SafeAreaView style={styles.mainContainer}>
       <LMHeader
         showBackArrow
         heading="Likes"
@@ -89,12 +96,7 @@ const LikesList = (props: any) => {
           estimatedItemSize={100}
         />
       ) : (
-        <View
-          style={{
-            flex: 1,
-            justifyContent: 'center',
-            marginBottom: 30,
-          }}>
+        <View style={styles.loaderView}>
           <LMLoader />
         </View>
       )}

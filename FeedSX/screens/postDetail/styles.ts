@@ -2,6 +2,9 @@ import {StyleSheet} from 'react-native';
 import Layout from '../../constants//Layout';
 
 export const styles = StyleSheet.create({
+  flexView: {
+    flex: 1,
+  },
   mainContainer: {
     flex: 1,
     height: Layout.window.height - Layout.normalize(44),
@@ -66,4 +69,5 @@ export const styles = StyleSheet.create({
     bottom: 0,
     width: '100%',
   },
+  lightGreyColorText: {color: '#0F1E3D66'},
 });

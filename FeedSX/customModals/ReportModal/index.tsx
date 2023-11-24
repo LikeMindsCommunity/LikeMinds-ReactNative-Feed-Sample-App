@@ -8,7 +8,7 @@ import {
   Image,
   Keyboard,
 } from 'react-native';
-import React, {useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 import styles from './styles';
 import {useDispatch} from 'react-redux';
 import {getReportTags, postReport} from '../../store/actions/feed';
@@ -70,7 +70,7 @@ const ReportModal = ({
   const reportTags = useAppSelector(state => state.feed.reportTags);
 
   // this function calls the get report tags api for reporting a post
-  const fetchReportTags = async () => {
+  const fetchReportTags = useCallback(async () => {
     const payload = {
       type: REPORT_TAGS_TYPE, // type 3 for report tags
     };
@@ -80,7 +80,7 @@ const ReportModal = ({
       ) as any,
     );
     return reportTagsResponse;
-  };
+  }, [dispatch]);
 
   // this function calls the report post api
   const reportPost = async ({
@@ -90,7 +90,7 @@ const ReportModal = ({
     tagId,
     uuid,
   }: ReportRequest) => {
-    if (selectedIndex == 5 && otherReason === '') {
+    if (selectedIndex === 5 && otherReason === '') {
       showToast();
     } else {
       const payload = {
@@ -147,17 +147,20 @@ const ReportModal = ({
     });
   };
 
-  // toast message view UI
-  const toastConfig = {
-    reportToastView: () => (
-      <View style={{zIndex: 4000}}>
+  const renderToastView = () => {
+    return (
+      <View style={styles.toastViewStyle}>
         <View>
           <View style={styles.modalView}>
             <Text style={styles.filterText}>{REPORT_REASON_VALIDATION}</Text>
           </View>
         </View>
       </View>
-    ),
+    );
+  };
+  // toast message view UI
+  const toastConfig = {
+    reportToastView: () => renderToastView(),
   };
 
   // this calls the fetchReportTags api when the modal gets visible
@@ -165,7 +168,7 @@ const ReportModal = ({
     if (visible) {
       fetchReportTags();
     }
-  }, [visible]);
+  }, [visible, fetchReportTags]);
 
   return (
     <Modal
@@ -180,7 +183,7 @@ const ReportModal = ({
       <SafeAreaView style={styles.page}>
         <TouchableOpacity
           activeOpacity={1}
-          style={{flex: 1}}
+          style={styles.contentBox}
           onPress={() => Keyboard.dismiss()}>
           {/* header section */}
           <View style={styles.titleView}>
@@ -220,19 +223,16 @@ const ReportModal = ({
                     <View
                       style={[
                         styles.reasonsBtn,
-                        {
-                          backgroundColor:
-                            index == selectedIndex ? '#5046E5' : 'white',
-                          borderColor:
-                            index == selectedIndex ? '#5046E5' : '#777e8e',
-                        },
+                        index === selectedIndex
+                          ? styles.selectedReasonItemView
+                          : styles.defaultReasonItemView,
                       ]}>
                       <Text
                         style={[
                           styles.btnText,
-                          {
-                            color: selectedIndex == index ? 'white' : '#777e8e',
-                          },
+                          selectedIndex === index
+                            ? styles.selectedReasonText
+                            : styles.defaultReasonText,
                         ]}>
                         {res.name}
                       </Text>
@@ -241,19 +241,14 @@ const ReportModal = ({
                 );
               })
             ) : (
-              <View
-                style={{
-                  flex: 1,
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                }}>
+              <View style={styles.loaderView}>
                 <LMLoader />
               </View>
             )}
           </View>
 
           {/* text input view for other reason text*/}
-          {selectedIndex == 5 ? (
+          {selectedIndex === 5 ? (
             <View style={styles.otherSection}>
               <TextInput
                 onChangeText={e => {
@@ -274,12 +269,12 @@ const ReportModal = ({
             <TouchableOpacity
               activeOpacity={0.8}
               style={
-                selectedId != -1 || otherReason
+                selectedId !== -1 || otherReason
                   ? styles.reportBtn
                   : styles.disabledReportBtn
               }
               onPress={
-                selectedId != -1 || otherReason
+                selectedId !== -1 || otherReason
                   ? () => {
                       reportPost({
                         entityId:

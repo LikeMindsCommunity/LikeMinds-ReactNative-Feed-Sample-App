@@ -10,7 +10,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import React, {useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 import {
   LMCommentItem,
   LMCommentUI,
@@ -253,7 +253,7 @@ const PostDetail = (props: IProps) => {
   };
 
   // this function calls the getPost api
-  const getPostData = async () => {
+  const getPostData = useCallback(async () => {
     const getPostResponse = await dispatch(
       getPost(
         GetPostRequest.builder()
@@ -264,7 +264,7 @@ const PostDetail = (props: IProps) => {
       ) as any,
     );
     return getPostResponse;
-  };
+  }, [commentPageNumber, dispatch, props.route.params]);
 
   // this function calls the getComments api
   const getCommentsReplies = async (
@@ -362,7 +362,7 @@ const PostDetail = (props: IProps) => {
   // this useEffect handles the pagination of the comments
   useEffect(() => {
     getPostData();
-  }, [commentPageNumber]);
+  }, [commentPageNumber, getPostData]);
 
   // this renders the postDetail view
   const renderPostDetail = () => {
@@ -454,7 +454,7 @@ const PostDetail = (props: IProps) => {
   }, []);
 
   return (
-    <SafeAreaView style={{flex: 1}}>
+    <SafeAreaView style={styles.flexView}>
       <KeyboardAvoidingView
         enabled={Platform.OS === 'android' ? true : false}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -465,7 +465,7 @@ const PostDetail = (props: IProps) => {
               : Layout.normalize(32)
             : 0
         }
-        style={{flex: 1}}>
+        style={styles.flexView}>
         {/* header view */}
         <LMHeader
           showBackArrow
@@ -598,7 +598,7 @@ const PostDetail = (props: IProps) => {
                     {renderPostDetail()}
                     <View style={styles.noCommentSection}>
                       <Text style={styles.noCommentText}>No comment found</Text>
-                      <Text style={{color: '#0F1E3D66'}}>
+                      <Text style={styles.lightGreyColorText}>
                         Be the first one to comment
                       </Text>
                     </View>
@@ -616,7 +616,7 @@ const PostDetail = (props: IProps) => {
         {/* replying to username view which renders when the user is adding a reply to a comment */}
         {replyOnComment.textInputFocus && (
           <View style={styles.replyCommentSection}>
-            <Text style={{color: '#0F1E3D99'}}>
+            <Text style={styles.lightGreyColorText}>
               Replying to {replyToUsername}
             </Text>
             <TouchableOpacity
