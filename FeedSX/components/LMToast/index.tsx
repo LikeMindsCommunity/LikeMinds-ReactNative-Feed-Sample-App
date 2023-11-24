@@ -1,5 +1,5 @@
 import {View, Text} from 'react-native';
-import React, {useEffect} from 'react';
+import React, {useCallback, useEffect} from 'react';
 import {styles} from './styles';
 import {useAppSelector} from '../../store/store';
 import Toast from 'react-native-toast-message';
@@ -10,13 +10,8 @@ const LMToast = () => {
   const dispatch = useDispatch();
   const {message} = useAppSelector(state => state.loader);
 
-  // handles the visibility of the toast
-  useEffect(() => {
-    showToast();
-  }, []);
-
   // this functions makes the toast visible
-  const showToast = () => {
+  const showToast = useCallback(() => {
     Toast.show({
       position: 'bottom',
       type: 'toastView',
@@ -29,11 +24,15 @@ const LMToast = () => {
           }) as any,
         ),
     });
-  };
+  }, [dispatch]);
 
-  // toast UI config
-  const toastConfig = {
-    toastView: () => (
+  // handles the visibility of the toast
+  useEffect(() => {
+    showToast();
+  }, [showToast]);
+
+  const renderToastView = () => {
+    return (
       <View>
         <View>
           <View style={styles.modalView}>
@@ -41,7 +40,12 @@ const LMToast = () => {
           </View>
         </View>
       </View>
-    ),
+    );
+  };
+
+  // toast UI config
+  const toastConfig = {
+    toastView: () => renderToastView(),
   };
 
   return (

@@ -176,7 +176,7 @@ export function postDetailReducer(state = initialState, action: any) {
       const updatedPostDetail = state.postDetail;
       // finds the reply with same tempId
       updatedPostDetail.replies?.find(item => {
-        if (item.tempId == comment.tempId) {
+        if (item.tempId === comment.tempId) {
           // converts the response to LMCommentUI model
           const commentData = convertToLMCommentUI(
             comment.postId,
@@ -184,20 +184,20 @@ export function postDetailReducer(state = initialState, action: any) {
             users,
           );
           // replacing the local object with response of the api
-          (item.createdAt = commentData[0].createdAt),
-            (item.id = commentData[0].id),
-            (item.menuItems = commentData[0].menuItems),
-            (item.isEdited = commentData[0].isEdited),
-            (item.isLiked = commentData[0].isLiked),
-            (item.level = commentData[0].level),
-            (item.likesCount = commentData[0].likesCount),
-            (item.postId = commentData[0].postId),
-            (item.replies = commentData[0].replies),
-            (item.repliesCount = commentData[0].repliesCount),
-            (item.text = commentData[0].text),
-            (item.user = commentData[0].user),
-            (item.userId = commentData[0].userId),
-            (item.uuid = commentData[0].uuid);
+          item.createdAt = commentData[0].createdAt;
+          item.id = commentData[0].id;
+          item.menuItems = commentData[0].menuItems;
+          item.isEdited = commentData[0].isEdited;
+          item.isLiked = commentData[0].isLiked;
+          item.level = commentData[0].level;
+          item.likesCount = commentData[0].likesCount;
+          item.postId = commentData[0].postId;
+          item.replies = commentData[0].replies;
+          item.repliesCount = commentData[0].repliesCount;
+          item.text = commentData[0].text;
+          item.user = commentData[0].user;
+          item.userId = commentData[0].userId;
+          item.uuid = commentData[0].uuid;
         }
       });
       return {...state, postDetail: updatedPostDetail};
@@ -251,21 +251,21 @@ export function postDetailReducer(state = initialState, action: any) {
           );
           // replacing the local object with response of the api
           item.replies.find(replyItem => {
-            if (replyItem.tempId == comment.tempId) {
-              (replyItem.createdAt = commentData[0].createdAt),
-                (replyItem.id = commentData[0].id),
-                (replyItem.menuItems = commentData[0].menuItems),
-                (replyItem.isEdited = commentData[0].isEdited),
-                (replyItem.isLiked = commentData[0].isLiked),
-                (replyItem.level = commentData[0].level),
-                (replyItem.likesCount = commentData[0].likesCount),
-                (replyItem.postId = commentData[0].postId),
-                (replyItem.replies = commentData[0].replies),
-                (replyItem.repliesCount = commentData[0].repliesCount),
-                (replyItem.text = commentData[0].text),
-                (replyItem.user = commentData[0].user),
-                (replyItem.userId = commentData[0].userId),
-                (replyItem.uuid = commentData[0].uuid);
+            if (replyItem.tempId === comment.tempId) {
+              replyItem.createdAt = commentData[0].createdAt;
+              replyItem.id = commentData[0].id;
+              replyItem.menuItems = commentData[0].menuItems;
+              replyItem.isEdited = commentData[0].isEdited;
+              replyItem.isLiked = commentData[0].isLiked;
+              replyItem.level = commentData[0].level;
+              replyItem.likesCount = commentData[0].likesCount;
+              replyItem.postId = commentData[0].postId;
+              replyItem.replies = commentData[0].replies;
+              replyItem.repliesCount = commentData[0].repliesCount;
+              replyItem.text = commentData[0].text;
+              replyItem.user = commentData[0].user;
+              replyItem.userId = commentData[0].userId;
+              replyItem.uuid = commentData[0].uuid;
             }
           });
         }
@@ -277,7 +277,7 @@ export function postDetailReducer(state = initialState, action: any) {
     }
     case PIN_POST_STATE: {
       const updatedFeed = state.postDetail;
-      if (updatedFeed != undefined) {
+      if (updatedFeed !== undefined) {
         // this updates the isPinned value
         updatedFeed.isPinned = !updatedFeed.isPinned;
 
