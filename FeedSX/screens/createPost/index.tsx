@@ -25,6 +25,7 @@ import {
   LMInputText,
   LMLinkPreview,
   LMOGTagsUI,
+  LMPostUI,
   LMProfilePicture,
   LMText,
   LMVideo,
@@ -41,14 +42,20 @@ import {
   MAX_FILE_SIZE,
   MEDIA_UPLOAD_COUNT_VALIDATION,
   MIN_FILE_SIZE,
+  SAVE_POST_TEXT,
   SELECT_BOTH,
   SELECT_IMAGE,
   SELECT_VIDEO,
   VIDEO_ATTACHMENT_TYPE,
 } from '../../constants/Strings';
-import {DecodeURLRequest} from '@likeminds.community/feed-js-beta';
+import {
+  DecodeURLRequest,
+  EditPostRequest,
+  GetPostRequest,
+} from '@likeminds.community/feed-js-beta';
 import _ from 'lodash';
 import {
+  editPost,
   getDecodedUrl,
   setUploadAttachments,
 } from '../../store/actions/createPost';
@@ -59,12 +66,14 @@ import {
   convertImageVideoMetaData,
   convertDocumentMetaData,
   convertLinkMetaData,
+  convertToLMPostUI,
 } from '../../viewDataModels';
 import {styles} from './styles';
 import {showToastMessage} from '../../store/actions/toast';
 import LMLoader from '../../../LikeMinds-ReactNative-Feed-UI/src/base/LMLoader';
+import {getPost} from '../../store/actions/postDetail';
 
-const CreatePost = (props:any) => {  
+const CreatePost = (props: any) => {
   const memberData = useAppSelector(state => state.feed.member);
   const dispatch = useDispatch();
   const [formattedDocumentAttachments, setFormattedDocumentAttachments] =
@@ -79,8 +88,9 @@ const CreatePost = (props:any) => {
   const [closedOnce, setClosedOnce] = useState(false);
   const [showOptions, setShowOptions] = useState(true);
   const [showSelecting, setShowSelecting] = useState(false);
+  const postToEdit = props?.route?.params;
+  const [postDetail, setPostDetail] = useState({} as LMPostUI);
   const [postContentText, setPostContentText] = useState('');
-  const postToEdit = props?.route?.params
 
   // function handles the selection of images and videos
   const setSelectedImageVideo = (type: string) => {
@@ -299,51 +309,54 @@ const CreatePost = (props:any) => {
     ...formattedDocumentAttachments,
   ];
 
-  return (
-    <SafeAreaView style={styles.container}>
-      {/* screen header section*/}
-      <LMHeader
-        showBackArrow
-        onBackPress={() => NavigationService.navigate(UNIVERSAL_FEED)}
-        heading={postToEdit ? "Edit Post" : "Create a Post"}
-        rightComponent={
-          // post button section
-          <TouchableOpacity
-            activeOpacity={0.8}
-            hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
-            disabled={
-              allAttachment?.length > 0 ||
-              formattedLinkAttachments?.length > 0 ||
-              postContentText.trim() != ''
-                ? false
-                : true
-            }
-            style={{
-              opacity:
-                allAttachment?.length > 0 ||
-                formattedLinkAttachments?.length > 0 ||
-                postContentText.trim() != ''
-                  ? 1
-                  : 0.5,
-            }}
-            onPress={() => {
-              // store the media for uploading and navigate to feed screen
-              dispatch(
-                setUploadAttachments({
-                  mediaAttachmentData: allAttachment,
-                  linkAttachmentData: formattedLinkAttachments,
-                  postContentData: postContentText.trim(),
-                }) as any,
-              );
-              NavigationService.goBack();
-            }}>
-            <Text style={{color: '#5046E5', fontSize: 16, fontWeight: '500'}}>
-              {ADD_POST_TEXT}
-            </Text>
-          </TouchableOpacity>
-        }
-      />
-      <ScrollView style={{flex: 1, marginBottom: showOptions ? 125 : 0}}>
+  // this function calls the getPost api
+  const getPostData = async () => {
+    const getPostResponse = await dispatch(
+      getPost(
+        GetPostRequest.builder()
+          .setpostId(postToEdit)
+          .setpage(1)
+          .setpageSize(10)
+          .build(),
+      ) as any,
+    );
+
+    setPostDetail(
+      convertToLMPostUI(getPostResponse?.post, getPostResponse?.users),
+    );
+    return getPostResponse;
+  };
+
+  useEffect(() => {
+    if (postToEdit) {
+      getPostData();
+    }
+  }, [postToEdit]);
+  useEffect(()=> {
+    if(postDetail?.text){
+      setPostContentText(postDetail?.text)
+    }
+  }, [postDetail])
+
+  const postEdit = async () => {
+    let editPostResponse = dispatch(
+      editPost(
+        EditPostRequest.builder()
+          .setHeading('')
+          .setattachments(postDetail?.attachments ? postDetail.attachments : [])
+          .setpostId(postDetail?.id)
+          .settext(postContentText)
+          .build(),
+      ) as any,
+    );
+    if(editPostResponse) {
+      NavigationService.goBack();
+    }
+    return editPostResponse;
+  };
+const uiRenderForPost = () => {
+  return(
+    <ScrollView style={{flex: 1, marginBottom: showOptions ? 125 : 0}}>
         {/* user profile section */}
         <View style={styles.profileContainer}>
           {/* profile image */}
@@ -464,8 +477,61 @@ const CreatePost = (props:any) => {
           />
         )}
       </ScrollView>
+  )
+}
+  return (
+    <SafeAreaView style={styles.container}>
+      {/* screen header section*/}
+      <LMHeader
+        showBackArrow
+        onBackPress={() => NavigationService.navigate(UNIVERSAL_FEED)}
+        heading={postToEdit ? 'Edit Post' : 'Create a Post'}
+        rightComponent={
+          // post button section
+          <TouchableOpacity
+            activeOpacity={0.8}
+            hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
+            disabled={
+              postToEdit
+                ? false
+                : allAttachment?.length > 0 ||
+                  formattedLinkAttachments?.length > 0 ||
+                  postContentText.trim() != ''
+                ? false
+                : true
+            }
+            style={{
+              opacity: postToEdit
+                ? 1
+                : allAttachment?.length > 0 ||
+                  formattedLinkAttachments?.length > 0 ||
+                  postContentText.trim() != ''
+                ? 1
+                : 0.5,
+            }}
+            onPress={postToEdit ? () => {postEdit()} : () => {
+              // store the media for uploading and navigate to feed screen
+              dispatch(
+                setUploadAttachments({
+                  mediaAttachmentData: allAttachment,
+                  linkAttachmentData: formattedLinkAttachments,
+                  postContentData: postContentText.trim(),
+                }) as any,
+              );
+              NavigationService.goBack();
+            }}>
+            <Text style={{color: '#5046E5', fontSize: 16, fontWeight: '500'}}>
+              {postToEdit ? SAVE_POST_TEXT : ADD_POST_TEXT}
+            </Text>
+          </TouchableOpacity>
+        }
+      />
+    {!postToEdit ? uiRenderForPost() : postDetail?.id ? uiRenderForPost() :  <View style={{ flex: 1,
+    justifyContent: 'center',}}>
+                <LMLoader />
+              </View>}
       {/* selection options section */}
-      {showOptions && (
+      {!postToEdit && showOptions && (
         <View>
           <View style={styles.selectionOptionsView}>
             {/* add photos button */}

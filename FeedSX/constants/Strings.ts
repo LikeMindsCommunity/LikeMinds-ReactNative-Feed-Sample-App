@@ -66,6 +66,7 @@ export const ADD_VIDEOS = 'Add Video';
 export const CREATE_POST_PLACEHOLDER_TEXT = 'Write something here...';
 export const ADD_MORE_MEDIA = 'Add More';
 export const ADD_POST_TEXT = 'POST';
+export const SAVE_POST_TEXT = 'SAVE';
 
 // android storage permession's text
 export const STORAGE_PERMISSION = 'Storage Permission';

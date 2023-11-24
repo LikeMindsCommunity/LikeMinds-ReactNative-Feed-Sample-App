@@ -346,8 +346,9 @@ const UniversalFeed = () => {
     const itemPinned = item?.isPinned;
     const itemComments = item?.commentsCount;
     const itemSaved = item?.isSaved;
+    const itemText = item?.text
 
-    return `${id}${itemLiked}${itemPinned}${itemComments}${itemSaved}`;
+    return `${id}${itemLiked}${itemPinned}${itemComments}${itemSaved}${itemText}`;
   };
 
   // this function is executed on pull to refresh
