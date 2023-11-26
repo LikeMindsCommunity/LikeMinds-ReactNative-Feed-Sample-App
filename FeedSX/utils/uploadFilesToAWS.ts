@@ -36,7 +36,7 @@ export const uploadFilesToAWS = async (
       Key: `files/post/${userUniqueId}/${media.name}`,
       Bucket: `${process.env.S3_BUCKET}`,
       Body: blob,
-      ACL: `public-read-write`,
+      ACL: 'public-read-write',
       ContentType: media.format,
     })
     .on('httpUploadProgress', function (progress) {

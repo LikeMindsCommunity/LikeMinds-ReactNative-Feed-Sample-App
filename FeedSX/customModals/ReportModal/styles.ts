@@ -118,6 +118,27 @@ const styles = StyleSheet.create({
     fontFamily: STYLES.$FONT_FAMILY.REGULAR,
     color: STYLES.$COLORS.whiteTextColor,
   },
+  toastViewStyle: {zIndex: 4000},
+  contentBox: {flex: 1},
+  selectedReasonItemView: {
+    backgroundColor: '#5046E5',
+    borderColor: '#5046E5',
+  },
+  defaultReasonItemView: {
+    backgroundColor: '#ffffff',
+    borderColor: '#777e8e',
+  },
+  selectedReasonText: {
+    color: '#ffffff',
+  },
+  defaultReasonText: {
+    color: '#777e8e',
+  },
+  loaderView: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
 });
 
 export default styles;

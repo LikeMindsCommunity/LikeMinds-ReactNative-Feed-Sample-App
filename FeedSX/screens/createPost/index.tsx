@@ -301,7 +301,7 @@ const CreatePost = (props: any) => {
     return () => {
       debouncedSearch.cancel(); // Cleanup the debounced function
     };
-  }, [postContentText]);
+  }, [postContentText, dispatch, closedOnce]);
 
   // all image/video/document media to be uploaded
   const allAttachment = [
@@ -356,7 +356,11 @@ const CreatePost = (props: any) => {
   };
 const uiRenderForPost = () => {
   return(
-    <ScrollView style={{flex: 1, marginBottom: showOptions ? 125 : 0}}>
+    <ScrollView style={
+      showOptions
+        ? styles.scrollViewStyleWithOptions
+        : styles.scrollViewStyleWithoutOptions
+    }>
         {/* user profile section */}
         <View style={styles.profileContainer}>
           {/* profile image */}
@@ -377,22 +381,16 @@ const uiRenderForPost = () => {
           onType={val => {
             setPostContentText(val);
           }}
+          autoFocus={postToEdit ? true : false}
         />
 
         {/* selected media section */}
         <View>
           {/* multi media selection section */}
           {showSelecting ? (
-            <View
-              style={{
-                height: 300,
-                justifyContent: 'center',
-                alignItems: 'center',
-              }}>
+            <View style={styles.selectingMediaView}>
               <LMLoader size={10} />
-              <Text style={{color: '#666666', marginTop: 12}}>
-                Fetching Media
-              </Text>
+              <Text style={styles.selectingMediaText}>Fetching Media</Text>
             </View>
           ) : formattedMediaAttachments ? (
             formattedMediaAttachments?.length > 1 ? (
@@ -543,7 +541,8 @@ const uiRenderForPost = () => {
               }}>
               <LMIcon
                 type="png"
-                assetPath={require('../../assets/images/gallery_icon3x.png')}></LMIcon>
+                assetPath={require('../../assets/images/gallery_icon3x.png')}
+              />
               <LMText
                 text={ADD_IMAGES}
                 textStyle={styles.selectionOptionstext}
@@ -558,7 +557,8 @@ const uiRenderForPost = () => {
               }}>
               <LMIcon
                 type="png"
-                assetPath={require('../../assets/images/video_icon3x.png')}></LMIcon>
+                assetPath={require('../../assets/images/video_icon3x.png')}
+              />
               <LMText
                 text={ADD_VIDEOS}
                 textStyle={styles.selectionOptionstext}
@@ -573,7 +573,8 @@ const uiRenderForPost = () => {
               }}>
               <LMIcon
                 type="png"
-                assetPath={require('../../assets/images/paperClip_icon3x.png')}></LMIcon>
+                assetPath={require('../../assets/images/paperClip_icon3x.png')}
+              />
               <LMText
                 text={ADD_FILES}
                 textStyle={styles.selectionOptionstext}

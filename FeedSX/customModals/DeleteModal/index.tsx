@@ -62,7 +62,7 @@ const DeleteModal = ({
 
   // this function calls the delete post api
   const postDelete = async () => {
-    if (!deletionReason && loggedInUser.userUniqueId != postDetail?.userId) {
+    if (!deletionReason && loggedInUser.userUniqueId !== postDetail?.userId) {
       showToast();
     } else {
       const payload = {
@@ -103,7 +103,10 @@ const DeleteModal = ({
 
   // this function calls the delete comment api
   const commentDelete = async () => {
-    if (!deletionReason && loggedInUser.userUniqueId != commentDetail?.userId) {
+    if (
+      !deletionReason &&
+      loggedInUser.userUniqueId !== commentDetail?.userId
+    ) {
       showToast();
     } else {
       const payload = {
@@ -157,9 +160,8 @@ const DeleteModal = ({
     });
   };
 
-  // delete toast message view UI
-  const toastConfig = {
-    deleteToastView: () => (
+  const renderToastView = () => {
+    return (
       <View>
         <View>
           <View style={styles.modalView}>
@@ -169,7 +171,11 @@ const DeleteModal = ({
           </View>
         </View>
       </View>
-    ),
+    );
+  };
+  // delete toast message view UI
+  const toastConfig = {
+    deleteToastView: () => renderToastView(),
   };
   return (
     <>
@@ -211,8 +217,8 @@ const DeleteModal = ({
                     </Text>
 
                     {/* delete reason selection section */}
-                    {loggedInUser.userUniqueId != postDetail?.userId &&
-                      loggedInUser.userUniqueId != commentDetail?.userId && (
+                    {loggedInUser.userUniqueId !== postDetail?.userId &&
+                      loggedInUser.userUniqueId !== commentDetail?.userId && (
                         <TouchableOpacity
                           activeOpacity={0.8}
                           onPress={() => {
@@ -224,7 +230,7 @@ const DeleteModal = ({
                             ) : (
                               <Text style={styles.reasonText}>
                                 {DELETION_REASON}
-                                <Text style={{color: 'red'}}>*</Text>
+                                <Text style={styles.asteriskTextStyle}>*</Text>
                               </Text>
                             )}
                             <Image
@@ -236,7 +242,7 @@ const DeleteModal = ({
                       )}
 
                     {/* text input view for other reason text*/}
-                    {deletionReason == 'Others' ? (
+                    {deletionReason === 'Others' ? (
                       <TextInput
                         onChangeText={e => {
                           setOtherReason(e);

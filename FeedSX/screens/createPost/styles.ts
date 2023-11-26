@@ -60,4 +60,25 @@ export const styles = StyleSheet.create({
     marginLeft: 8,
     color: '#222020',
   },
+  postButtonDisabled: {
+    opacity: 0.5,
+  },
+  postButtonEnable: {
+    opacity: 1,
+  },
+  postTextStyle: {color: '#5046E5', fontSize: 16, fontWeight: '500'},
+  scrollViewStyleWithOptions: {
+    flex: 1,
+    marginBottom: 125,
+  },
+  scrollViewStyleWithoutOptions: {
+    flex: 1,
+    marginBottom: 0,
+  },
+  selectingMediaView: {
+    height: 300,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  selectingMediaText: {color: '#666666', marginTop: 12},
 });

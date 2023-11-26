@@ -41,6 +41,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     width: 10,
     height: 10,
+    borderColor: '#919191',
   },
   tagItem: {
     flexDirection: 'row',
@@ -56,6 +57,12 @@ const styles = StyleSheet.create({
     borderColor: '#e7ebf1',
     width: '84%',
     paddingVertical: 18,
+  },
+  selectedReasonView: {
+    backgroundColor: '#919191',
+  },
+  defaultReasonView: {
+    backgroundColor: '#ffffff',
   },
 });
 

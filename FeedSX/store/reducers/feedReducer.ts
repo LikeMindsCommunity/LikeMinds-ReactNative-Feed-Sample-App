@@ -64,7 +64,7 @@ export function feedReducer(state = initialState, action: any) {
     case UNIVERSAL_FEED_REFRESH_SUCCESS: {
       const {users = {}} = action.body;
       // model converter function
-      let post = convertUniversalFeedPosts(action.body);
+      const post = convertUniversalFeedPosts(action.body);
       return {...state, feed: post, users: users};
     }
     case LIKE_POST_SUCCESS: {
@@ -77,16 +77,16 @@ export function feedReducer(state = initialState, action: any) {
         (item: LMPostUI) => item?.id === action.body,
       );
       // this updates the isLiked value
-      updatedFeed[likedPostIndex]['isLiked'] =
-        !updatedFeed[likedPostIndex]['isLiked'];
-      if (updatedFeed[likedPostIndex]['isLiked']) {
+      updatedFeed[likedPostIndex].isLiked =
+        !updatedFeed[likedPostIndex].isLiked;
+      if (updatedFeed[likedPostIndex].isLiked) {
         // increase the like count
-        updatedFeed[likedPostIndex]['likesCount'] =
-          updatedFeed[likedPostIndex]['likesCount'] + 1;
+        updatedFeed[likedPostIndex].likesCount =
+          updatedFeed[likedPostIndex].likesCount + 1;
       } else {
         // decrease the like count
-        updatedFeed[likedPostIndex]['likesCount'] =
-          updatedFeed[likedPostIndex]['likesCount'] - 1;
+        updatedFeed[likedPostIndex].likesCount =
+          updatedFeed[likedPostIndex].likesCount - 1;
       }
       return {...state, feed: updatedFeed};
     }
@@ -100,8 +100,8 @@ export function feedReducer(state = initialState, action: any) {
         (item: any) => item?.id === action.body,
       );
       // this updates the isSaved value
-      updatedFeed[savedPostIndex]['isSaved'] =
-        !updatedFeed[savedPostIndex]['isSaved'];
+      updatedFeed[savedPostIndex].isSaved =
+        !updatedFeed[savedPostIndex].isSaved;
 
       return {...state, feed: updatedFeed};
     }
@@ -115,23 +115,22 @@ export function feedReducer(state = initialState, action: any) {
         (item: any) => item?.id === action.body,
       );
       // this updates the isPinned value
-      updatedFeed[pinnedPostIndex]['isPinned'] =
-        !updatedFeed[pinnedPostIndex]['isPinned'];
+      updatedFeed[pinnedPostIndex].isPinned =
+        !updatedFeed[pinnedPostIndex].isPinned;
       // this gets the index of pin/unpin from menu item
-      const menuItemIndex = updatedFeed[pinnedPostIndex]['menuItems'].findIndex(
+      const menuItemIndex = updatedFeed[pinnedPostIndex].menuItems.findIndex(
         (item: any) => item.id === PIN_POST_ID || item.id === UNPIN_POST_ID,
       );
-      if (updatedFeed[pinnedPostIndex]['isPinned']) {
+      if (updatedFeed[pinnedPostIndex].isPinned) {
         //  this updates the menuItem title to unpin
-        updatedFeed[pinnedPostIndex]['menuItems'][menuItemIndex].id =
+        updatedFeed[pinnedPostIndex].menuItems[menuItemIndex].id =
           UNPIN_POST_ID;
-        updatedFeed[pinnedPostIndex]['menuItems'][menuItemIndex].title =
+        updatedFeed[pinnedPostIndex].menuItems[menuItemIndex].title =
           UNPIN_THIS_POST;
       } else {
         //  this updates the menuItem title to pin
-        updatedFeed[pinnedPostIndex]['menuItems'][menuItemIndex].id =
-          PIN_POST_ID;
-        updatedFeed[pinnedPostIndex]['menuItems'][menuItemIndex].title =
+        updatedFeed[pinnedPostIndex].menuItems[menuItemIndex].id = PIN_POST_ID;
+        updatedFeed[pinnedPostIndex].menuItems[menuItemIndex].title =
           PIN_THIS_POST;
       }
 
@@ -168,7 +167,7 @@ export function feedReducer(state = initialState, action: any) {
       const updatedFeed = state.feed;
       // finds the post in which new comment is added in post detail and manage its comment count
       updatedFeed.find((item: LMPostUI) => {
-        if (item.id == comment.postId) {
+        if (item.id === comment.postId) {
           item.commentsCount = item?.commentsCount + 1;
         }
       });
@@ -178,7 +177,7 @@ export function feedReducer(state = initialState, action: any) {
       const updatedFeed = state.feed;
       // finds the post whose comment is deleted in post detail and manage its comment count
       updatedFeed.find((item: LMPostUI) => {
-        if (item.id == action.body.postId) {
+        if (item.id === action.body.postId) {
           item.commentsCount = item?.commentsCount - 1;
         }
       });
