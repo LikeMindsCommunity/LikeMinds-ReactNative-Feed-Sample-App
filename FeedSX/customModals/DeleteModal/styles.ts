@@ -51,7 +51,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'flex-end',
     marginTop: STYLES.$MARGINS.XL,
-    paddingBottom: STYLES.$PADDINGS.XS
+    paddingBottom: STYLES.$PADDINGS.XS,
   },
   deleteTextBtn: {
     color: '#5046e5',
@@ -76,14 +76,14 @@ const styles = StyleSheet.create({
     color: STYLES.$COLORS.darkTextColor,
   },
   modalView: {
-    padding:10,
+    padding: 10,
     borderRadius: 8,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
       height: 2,
     },
-    backgroundColor:STYLES.$BACKGROUND_COLORS.DARK,
+    backgroundColor: STYLES.$BACKGROUND_COLORS.DARK,
     shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 5,
@@ -92,7 +92,10 @@ const styles = StyleSheet.create({
     fontSize: STYLES.$FONT_SIZES.LARGE,
     fontFamily: STYLES.$FONT_FAMILY.REGULAR,
     color: STYLES.$COLORS.whiteTextColor,
-  }
+  },
+  asteriskTextStyle: {
+    color: 'red',
+  },
 });
 
 export default styles;

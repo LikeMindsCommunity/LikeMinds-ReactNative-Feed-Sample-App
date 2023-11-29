@@ -1,5 +1,3 @@
-import * as NavigationService from './RootNavigation'
+import * as NavigationService from './RootNavigation';
 
-export {
-    NavigationService
-}
+export {NavigationService};

@@ -1,15 +1,15 @@
 // this function calculates the post created time duration from present date
 export const timeStamp = (value: number) => {
-  let currentDate = Number(new Date());
-  let postedDate = Number(new Date(value));
-  var difference = currentDate - postedDate;
+  const currentDate = Number(new Date());
+  const postedDate = Number(new Date(value));
+  const difference = currentDate - postedDate;
 
-  var seconds = Math.floor(difference / 1000),
+  let seconds = Math.floor(difference / 1000),
     minutes = Math.floor(seconds / 60),
     hours = Math.floor(minutes / 60),
     days = Math.floor(hours / 24),
-    months = Math.floor(days / 30),
-    years = Math.floor(days / 365);
+    months = Math.floor(days / 30);
+  const years = Math.floor(days / 365);
 
   seconds %= 60;
   minutes %= 60;
@@ -20,39 +20,39 @@ export const timeStamp = (value: number) => {
   let createdDuration;
   if (years >= 1) {
     if (years === 1) {
-      createdDuration = years + ' year';
+      createdDuration = years + ' y';
     } else {
-      createdDuration = years + ' years';
+      createdDuration = years + ' y';
     }
   } else if (months >= 1) {
     if (months === 1) {
-      createdDuration = months + ' month';
+      createdDuration = months + ' mo';
     } else {
-      createdDuration = months + ' months';
+      createdDuration = months + ' mos';
     }
   } else if (days >= 1) {
     if (days === 1) {
-      createdDuration = days + ' day';
+      createdDuration = days + ' d';
     } else {
-      createdDuration = days + ' days';
+      createdDuration = days + ' d';
     }
   } else if (hours >= 1) {
     if (hours === 1) {
-      createdDuration = hours + ' hour';
+      createdDuration = hours + ' h';
     } else {
-      createdDuration = hours + ' hours';
+      createdDuration = hours + ' h';
     }
   } else if (minutes >= 1) {
     if (minutes === 1) {
-      createdDuration = minutes + ' minute';
+      createdDuration = minutes + ' min';
     } else {
-      createdDuration = minutes + ' minutes';
+      createdDuration = minutes + ' min';
     }
   } else if (seconds >= 1) {
     if (seconds === 1) {
-      createdDuration = seconds + ' second';
+      createdDuration = seconds + ' s';
     } else {
-      createdDuration = seconds + ' seconds';
+      createdDuration = seconds + ' s';
     }
   }
   return createdDuration;

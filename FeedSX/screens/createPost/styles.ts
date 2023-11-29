@@ -4,7 +4,7 @@ import layout from '../../constants/Layout';
 export const styles = StyleSheet.create({
   container: {
     backgroundColor: '#fff',
-    height: layout.window.height
+    height: layout.window.height,
   },
   profileContainer: {
     flexDirection: 'row',
@@ -40,7 +40,7 @@ export const styles = StyleSheet.create({
     bottom: 0,
     width: layout.window.width,
     backgroundColor: '#fff',
-    height:122,
+    height: 122,
   },
   optionItemView: {
     flexDirection: 'row',
@@ -60,4 +60,25 @@ export const styles = StyleSheet.create({
     marginLeft: 8,
     color: '#222020',
   },
+  postButtonDisabled: {
+    opacity: 0.5,
+  },
+  postButtonEnable: {
+    opacity: 1,
+  },
+  postTextStyle: {color: '#5046E5', fontSize: 16, fontWeight: '500'},
+  scrollViewStyleWithOptions: {
+    flex: 1,
+    marginBottom: 125,
+  },
+  scrollViewStyleWithoutOptions: {
+    flex: 1,
+    marginBottom: 0,
+  },
+  selectingMediaView: {
+    height: 300,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  selectingMediaText: {color: '#666666', marginTop: 12},
 });

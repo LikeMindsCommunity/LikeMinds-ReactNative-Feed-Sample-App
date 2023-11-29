@@ -47,13 +47,14 @@ export const addPost = (payload?: any) => async (dispatch: Dispatch) => {
 };
 
 // selected media to be uploaded action
-export const setUploadAttachments = (payload?: any) => async (dispatch: Dispatch) => {
-  try {
-    return await dispatch({
-      type: UPLOAD_ATTACHMENTS,
-      body: payload
-    });
-  } catch (error) {
-    Alert.alert(`${error}`);
-  }
-};
+export const setUploadAttachments =
+  (payload?: any) => async (dispatch: Dispatch) => {
+    try {
+      return await dispatch({
+        type: UPLOAD_ATTACHMENTS,
+        body: payload,
+      });
+    } catch (error) {
+      Alert.alert(`${error}`);
+    }
+  };

@@ -37,7 +37,7 @@ import {
   CLEAR_FEED,
 } from '../types/types';
 import {lmFeedClient} from '../../..';
-import {InitiateUserRequest} from '@likeminds.community/feed-js';
+import {InitiateUserRequest} from '@likeminds.community/feed-js-beta';
 
 // initiateUser API action
 export const initiateUser = (payload?: any) => async (dispatch: Dispatch) => {
@@ -105,7 +105,7 @@ export const clearFeed = () => async (dispatch: Dispatch) => {
   try {
     return await dispatch({
       type: CLEAR_FEED,
-      body: []
+      body: [],
     });
   } catch (error) {
     Alert.alert(`${error}`);
@@ -268,7 +268,7 @@ export const pinPostStateHandler =
     } catch (error) {
       Alert.alert(`${error}`);
     }
-};
+  };
 
 // video auto play/pause handler action
 export const autoPlayPostVideo =
@@ -282,4 +282,4 @@ export const autoPlayPostVideo =
     } catch (error) {
       Alert.alert(`${error}`);
     }
-};
+  };

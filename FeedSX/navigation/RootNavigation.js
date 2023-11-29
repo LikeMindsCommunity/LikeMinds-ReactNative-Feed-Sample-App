@@ -8,10 +8,9 @@ function navigate(name, params) {
   }
 }
 function goBack() {
-  navigationRef.goBack();
+  if (navigationRef.canGoBack()) {
+    navigationRef.goBack();
+  }
 }
 
-export {
-  navigate,
-  goBack
-}
+export {navigate, goBack};

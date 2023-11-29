@@ -5,7 +5,7 @@ import Layout from '../../constants/Layout';
 const styles = StyleSheet.create({
   page: {
     backgroundColor: STYLES.$BACKGROUND_COLORS.LIGHT,
-    flex:1,
+    flex: 1,
     paddingTop: STYLES.$PADDINGS.SMALL,
   },
   textHeading: {
@@ -37,7 +37,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     position: 'absolute',
     bottom: 40,
-    zIndex:-1
+    zIndex: -1,
   },
   reportBtn: {
     backgroundColor: STYLES.$COLORS.RED,
@@ -98,17 +98,17 @@ const styles = StyleSheet.create({
   },
   dropdownIcon: {
     width: Layout.normalize(18),
-    height: Layout.normalize(18)
+    height: Layout.normalize(18),
   },
   modalView: {
-    padding:10,
+    padding: 10,
     borderRadius: 8,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
       height: 2,
     },
-    backgroundColor:STYLES.$BACKGROUND_COLORS.DARK,
+    backgroundColor: STYLES.$BACKGROUND_COLORS.DARK,
     shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 5,
@@ -117,7 +117,28 @@ const styles = StyleSheet.create({
     fontSize: STYLES.$FONT_SIZES.LARGE,
     fontFamily: STYLES.$FONT_FAMILY.REGULAR,
     color: STYLES.$COLORS.whiteTextColor,
-  }
+  },
+  toastViewStyle: {zIndex: 4000},
+  contentBox: {flex: 1},
+  selectedReasonItemView: {
+    backgroundColor: '#5046E5',
+    borderColor: '#5046E5',
+  },
+  defaultReasonItemView: {
+    backgroundColor: '#ffffff',
+    borderColor: '#777e8e',
+  },
+  selectedReasonText: {
+    color: '#ffffff',
+  },
+  defaultReasonText: {
+    color: '#777e8e',
+  },
+  loaderView: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
 });
 
 export default styles;
