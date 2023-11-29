@@ -341,10 +341,10 @@ const CreatePost = (props: any) => {
       setPostContentText(postDetail?.text);
     }
     if (postDetail?.attachments) {
-      let imageVideoMedia = [];
-      let documentMedia = [];
-      let linkPreview = [];
-      for (const media of postDetail?.attachments) {
+      const imageVideoMedia = [];
+      const documentMedia = [];
+      const linkPreview = [];
+      for (const media of postDetail.attachments) {
         if (media.attachmentType === IMAGE_ATTACHMENT_TYPE) {
           imageVideoMedia.push(media);
         } else if (media.attachmentType === VIDEO_ATTACHMENT_TYPE) {
@@ -363,7 +363,7 @@ const CreatePost = (props: any) => {
 
   //  this function calls the edit post api
   const postEdit = async () => {
-    let editPostResponse = dispatch(
+    const editPostResponse = dispatch(
       editPost(
         EditPostRequest.builder()
           .setHeading('')
@@ -525,19 +525,19 @@ const CreatePost = (props: any) => {
                 ? false
                 : allAttachment?.length > 0 ||
                   formattedLinkAttachments?.length > 0 ||
-                  postContentText.trim() != ''
+                  postContentText.trim() !== ''
                 ? false
                 : true
             }
-            style={{
-              opacity: postToEdit
-                ? 1
+            style={
+              postToEdit
+                ? styles.enabledOpacity
                 : allAttachment?.length > 0 ||
                   formattedLinkAttachments?.length > 0 ||
-                  postContentText.trim() != ''
-                ? 1
-                : 0.5,
-            }}
+                  postContentText.trim() !== ''
+                ? styles.enabledOpacity
+                : styles.disabledOpacity
+            }
             onPress={
               postToEdit
                 ? () => {
@@ -555,7 +555,7 @@ const CreatePost = (props: any) => {
                     NavigationService.goBack();
                   }
             }>
-            <Text style={{color: '#5046E5', fontSize: 16, fontWeight: '500'}}>
+            <Text style={styles.headerRightComponentText}>
               {postToEdit ? SAVE_POST_TEXT : ADD_POST_TEXT}
             </Text>
           </TouchableOpacity>

@@ -238,7 +238,7 @@ const PostDetail = (props: IProps) => {
       handleDeleteComment(true);
     }
     if (itemId === 8) {
-      let commentDetail = getCommentDetail(postDetail?.replies, commentId);
+      const commentDetail = getCommentDetail(postDetail?.replies, commentId);
       setCommentToAdd(commentDetail?.text ? commentDetail.text : '');
       setTimeout(() => {
         setEditCommentFocus(true);
@@ -251,7 +251,7 @@ const PostDetail = (props: IProps) => {
     comments?: LMCommentUI[],
     id?: string,
   ): LMCommentUI | undefined => {
-    let commentId = id ? id : selectedMenuItemCommentId;
+    const commentId = id ? id : selectedMenuItemCommentId;
     if (comments) {
       for (const reply of comments) {
         if (reply.id === commentId) {
@@ -471,12 +471,12 @@ const PostDetail = (props: IProps) => {
 
   // this function calls the edit comment api
   const commentEdit = async () => {
-    let payload = {
+    const payload = {
       commentId: selectedMenuItemCommentId,
       commentText: commentToAdd,
     };
     await dispatch(editCommentStateHandler(payload) as any);
-    let editCommentResponse = await dispatch(
+    const editCommentResponse = await dispatch(
       editComment(
         EditCommentRequest.builder()
           .setcommentId(selectedMenuItemCommentId)
