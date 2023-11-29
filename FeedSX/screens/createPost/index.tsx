@@ -326,7 +326,7 @@ const CreatePost = (props: any) => {
       convertToLMPostUI(getPostResponse?.post, getPostResponse?.users),
     );
     return getPostResponse;
-  }, [dispatch]);
+  }, [dispatch, postToEdit]);
 
   // this checks if the post has to be edited or not and call the get post api
   useEffect(() => {
