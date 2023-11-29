@@ -6,7 +6,7 @@ import {
   Text,
   ScrollView,
 } from 'react-native';
-import React, {useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 import {
   detectURLs,
   requestStoragePermission,
@@ -311,7 +311,7 @@ const CreatePost = (props: any) => {
   ];
 
   // this function calls the getPost api
-  const getPostData = async () => {
+  const getPostData = useCallback(async () => {
     const getPostResponse = await dispatch(
       getPost(
         GetPostRequest.builder()
@@ -326,14 +326,14 @@ const CreatePost = (props: any) => {
       convertToLMPostUI(getPostResponse?.post, getPostResponse?.users),
     );
     return getPostResponse;
-  };
+  }, [dispatch]);
 
   // this checks if the post has to be edited or not and call the get post api
   useEffect(() => {
     if (postToEdit) {
       getPostData();
     }
-  }, [postToEdit]);
+  }, [postToEdit, getPostData]);
 
   // this sets the post data in the local state to render UI
   useEffect(() => {
