@@ -15,6 +15,8 @@ import {
   CREATE_REPLY_STATE,
   CREATE_REPLY_SUCCESS,
   DELETE_COMMENT_STATE,
+  EDIT_COMMENT_STATE,
+  EDIT_COMMENT_SUCCESS,
   PIN_POST_STATE,
   PIN_POST_SUCCESS,
   POST_COMMENTS_SUCCESS,
@@ -296,6 +298,49 @@ export function postDetailReducer(state = initialState, action: any) {
         }
       }
       return {...state, postDetail: updatedFeed};
+    }
+    case EDIT_COMMENT_STATE: {
+      const updatedPostDetail = state.postDetail;
+      const {commentId, commentText} = action.body;
+
+      const editCommentIndex =
+        updatedPostDetail?.replies &&
+        updatedPostDetail.replies.findIndex(
+          (item: any) => item?.id === commentId,
+        );
+      // removes that comment from the data
+      if (
+        updatedPostDetail?.replies &&
+        editCommentIndex !== undefined &&
+        editCommentIndex !== -1
+      ) {
+        updatedPostDetail.replies[editCommentIndex].text = commentText;
+        updatedPostDetail.replies[editCommentIndex].isEdited = true;
+        return {...state, postDetail: updatedPostDetail};
+      } else {
+        if (updatedPostDetail?.replies) {
+          for (let i = 0; i <= updatedPostDetail?.replies?.length - 1; i++) {
+            const editCommentIndexChild =
+              updatedPostDetail?.replies &&
+              updatedPostDetail.replies[i].replies.findIndex(
+                (item: any) => item?.id === commentId,
+              );
+            // removes that child comment from the data
+            if (
+              updatedPostDetail?.replies[i]?.replies &&
+              editCommentIndexChild !== undefined &&
+              editCommentIndexChild !== -1
+            ) {
+              updatedPostDetail.replies[i].replies[editCommentIndexChild].text =
+                commentText;
+              updatedPostDetail.replies[i].replies[
+                editCommentIndexChild
+              ].isEdited = true;
+            }
+          }
+        }
+      }
+      return {...state};
     }
     default:
       return state;

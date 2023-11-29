@@ -23,6 +23,8 @@ import {
   addComment,
   addCommentStateHandler,
   clearComments,
+  editComment,
+  editCommentStateHandler,
   getComments,
   getPost,
   likeComment,
@@ -31,6 +33,7 @@ import {
 } from '../../store/actions/postDetail';
 import {
   AddCommentRequest,
+  EditCommentRequest,
   GetCommentRequest,
   GetPostRequest,
   LikeCommentRequest,
@@ -112,6 +115,7 @@ const PostDetail = (props: IProps) => {
   const [localModalVisibility, setLocalModalVisibility] =
     useState(showDeleteModal);
   const [keyboardIsVisible, setKeyboardIsVisible] = useState(false);
+  const [editCommentFocus, setEditCommentFocus] = useState(false)
 
   // this function closes the post action list modal
   const closePostActionListModal = () => {
@@ -221,7 +225,10 @@ const PostDetail = (props: IProps) => {
   };
 
   // this function returns the id of the item selected from menu list and handles further functionalities accordingly for comment
-  const onCommentMenuItemSelect = (commentId: string, itemId?: number) => {
+  const onCommentMenuItemSelect = async (
+    commentId: string,
+    itemId?: number,
+  ) => {
     setSelectedMenuItemPostId('');
     setSelectedMenuItemCommentId(commentId);
     if (itemId === REPORT_COMMENT_MENU_ITEM) {
@@ -230,19 +237,27 @@ const PostDetail = (props: IProps) => {
     if (itemId === DELETE_COMMENT_MENU_ITEM) {
       handleDeleteComment(true);
     }
+    if (itemId === 8) {      
+     let commentDetail = getCommentDetail(postDetail?.replies, commentId)
+     setCommentToAdd(commentDetail?.text ? commentDetail.text : '')
+     setTimeout(()=> {
+       setEditCommentFocus(true)
+     },100)
+    }
   };
 
   // this function gets the detail of comment whose menu item is clicked
   const getCommentDetail = (
-    comments?: LMCommentUI[],
-  ): LMCommentUI | undefined => {
+    comments?: LMCommentUI[], id?: string
+  ): LMCommentUI | undefined => {    
+    let commentId = id ? id : selectedMenuItemCommentId
     if (comments) {
       for (const reply of comments) {
-        if (reply.id === selectedMenuItemCommentId) {
+        if (reply.id === commentId) {
           return reply; // Found the reply in the current level
         }
         if (reply.replies && reply.replies.length > 0) {
-          const nestedReply = getCommentDetail(reply.replies);
+          const nestedReply = getCommentDetail(reply.replies, commentId);
           if (nestedReply) {
             return nestedReply; // Found the reply in the child replies
           }
@@ -453,6 +468,24 @@ const PostDetail = (props: IProps) => {
     };
   }, []);
 
+  const commentEdit = async () => {
+    let payload = {
+      commentId: selectedMenuItemCommentId,
+      commentText: commentToAdd
+    }
+   await dispatch(editCommentStateHandler(payload) as any)
+    let editCommentResponse = await dispatch(
+      editComment(
+        EditCommentRequest.builder().setcommentId(selectedMenuItemCommentId).setpostId(postDetail?.id).settext(commentToAdd).build()
+      ) as any,
+    );
+    if(editCommentResponse) {
+     setEditCommentFocus(false)
+     setCommentToAdd('')
+    }
+    return editCommentResponse;
+  };
+
   return (
     <SafeAreaView style={styles.flexView}>
       <KeyboardAvoidingView
@@ -640,7 +673,7 @@ const PostDetail = (props: IProps) => {
           autoFocus={
             props.route.params[1] === NAVIGATED_FROM_COMMENT
               ? true
-              : replyOnComment.textInputFocus
+              : replyOnComment.textInputFocus ? true : editCommentFocus
           }
           placeholderText="Write a comment"
           placeholderTextColor="#9B9B9B"
@@ -650,10 +683,10 @@ const PostDetail = (props: IProps) => {
           rightIcon={{
             onTap: () => {
               commentToAdd
-                ? replyOnComment.textInputFocus
+                ? editCommentFocus ? commentEdit(): replyOnComment.textInputFocus
                   ? addNewReply(postDetail?.id, replyOnComment.commentId)
-                  : addNewComment(postDetail?.id)
-                : {};
+                  : addNewComment(postDetail?.id) : {}
+                
             },
             icon: {
               type: 'png',

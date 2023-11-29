@@ -37,6 +37,7 @@ import {
   ADD_POST_TEXT,
   ADD_VIDEOS,
   CREATE_POST_PLACEHOLDER_TEXT,
+  DOCUMENT_ATTACHMENT_TYPE,
   FILE_UPLOAD_SIZE_VALIDATION,
   IMAGE_ATTACHMENT_TYPE,
   MAX_FILE_SIZE,
@@ -332,35 +333,55 @@ const CreatePost = (props: any) => {
       getPostData();
     }
   }, [postToEdit]);
-  useEffect(()=> {
-    if(postDetail?.text){
-      setPostContentText(postDetail?.text)
+  useEffect(() => {
+    if (postDetail?.text) {
+      setPostContentText(postDetail?.text);
     }
-  }, [postDetail])
+    if (postDetail?.attachments) {
+      let imageVideoMedia = [];
+      let documentMedia = [];
+      let linkPreview = [];
+      for (const media of postDetail?.attachments) {
+        if (media.attachmentType === IMAGE_ATTACHMENT_TYPE) {
+          imageVideoMedia.push(media);
+        } else if (media.attachmentType === VIDEO_ATTACHMENT_TYPE) {
+          imageVideoMedia.push(media);
+        } else if (media.attachmentType === DOCUMENT_ATTACHMENT_TYPE) {
+          documentMedia.push(media);
+        } else {
+          linkPreview.push(media);
+        }
+      }
+      setFormattedMediaAttachments(imageVideoMedia);
+      setFormattedDocumentAttachments(documentMedia);
+      setFormattedLinkAttachments(linkPreview);
+    }
+  }, [postDetail]);
 
   const postEdit = async () => {
     let editPostResponse = dispatch(
       editPost(
         EditPostRequest.builder()
           .setHeading('')
-          .setattachments(postDetail?.attachments ? postDetail.attachments : [])
+          .setattachments([...allAttachment, ...formattedLinkAttachments])
           .setpostId(postDetail?.id)
           .settext(postContentText)
           .build(),
       ) as any,
     );
-    if(editPostResponse) {
+    if (editPostResponse) {
       NavigationService.goBack();
     }
     return editPostResponse;
   };
-const uiRenderForPost = () => {
-  return(
-    <ScrollView style={
-      showOptions
-        ? styles.scrollViewStyleWithOptions
-        : styles.scrollViewStyleWithoutOptions
-    }>
+  const uiRenderForPost = () => {
+    return (
+      <ScrollView
+        style={postToEdit ? styles.scrollViewStyleWithoutOptions :
+          showOptions
+            ? styles.scrollViewStyleWithOptions
+            : styles.scrollViewStyleWithoutOptions
+        }>
         {/* user profile section */}
         <View style={styles.profileContainer}>
           {/* profile image */}
@@ -396,7 +417,7 @@ const uiRenderForPost = () => {
             formattedMediaAttachments?.length > 1 ? (
               <LMCarousel
                 attachments={formattedMediaAttachments}
-                showCancel
+                showCancel={postToEdit ? false : true}
                 videoItem={{videoUrl: '', showControls: true}}
                 onCancel={index => removeMediaAttachment(index)}
               />
@@ -407,7 +428,7 @@ const uiRenderForPost = () => {
                   IMAGE_ATTACHMENT_TYPE && (
                   <LMImage
                     imageUrl={`${formattedMediaAttachments[0]?.attachmentMeta.url}`}
-                    showCancel
+                    showCancel={postToEdit ? false : true}
                     onCancel={() => removeSingleAttachment()}
                   />
                 )}
@@ -416,7 +437,7 @@ const uiRenderForPost = () => {
                   VIDEO_ATTACHMENT_TYPE && (
                   <LMVideo
                     videoUrl={`${formattedMediaAttachments[0]?.attachmentMeta.url}`}
-                    showCancel
+                    showCancel={postToEdit ? false : true}
                     showControls
                     looping={false}
                     onCancel={() => removeSingleAttachment()}
@@ -430,7 +451,7 @@ const uiRenderForPost = () => {
             formattedDocumentAttachments.length >= 1 && (
               <LMDocument
                 attachments={formattedDocumentAttachments}
-                showCancel
+                showCancel={postToEdit ? false : true}
                 showMoreText={false}
                 onCancel={index => removeDocumentAttachment(index)}
               />
@@ -452,7 +473,7 @@ const uiRenderForPost = () => {
             )}
         </View>
         {/* add more media button section */}
-        {allAttachment.length > 0 && allAttachment.length < 10 && (
+        {!postToEdit && allAttachment.length > 0 && allAttachment.length < 10 && (
           <LMButton
             onTap={
               formattedMediaAttachments.length > 0
@@ -475,8 +496,8 @@ const uiRenderForPost = () => {
           />
         )}
       </ScrollView>
-  )
-}
+    );
+  };
   return (
     <SafeAreaView style={styles.container}>
       {/* screen header section*/}
@@ -507,27 +528,38 @@ const uiRenderForPost = () => {
                 ? 1
                 : 0.5,
             }}
-            onPress={postToEdit ? () => {postEdit()} : () => {
-              // store the media for uploading and navigate to feed screen
-              dispatch(
-                setUploadAttachments({
-                  mediaAttachmentData: allAttachment,
-                  linkAttachmentData: formattedLinkAttachments,
-                  postContentData: postContentText.trim(),
-                }) as any,
-              );
-              NavigationService.goBack();
-            }}>
+            onPress={
+              postToEdit
+                ? () => {
+                    postEdit();
+                  }
+                : () => {
+                    // store the media for uploading and navigate to feed screen
+                    dispatch(
+                      setUploadAttachments({
+                        mediaAttachmentData: allAttachment,
+                        linkAttachmentData: formattedLinkAttachments,
+                        postContentData: postContentText.trim(),
+                      }) as any,
+                    );
+                    NavigationService.goBack();
+                  }
+            }>
             <Text style={{color: '#5046E5', fontSize: 16, fontWeight: '500'}}>
               {postToEdit ? SAVE_POST_TEXT : ADD_POST_TEXT}
             </Text>
           </TouchableOpacity>
         }
       />
-    {!postToEdit ? uiRenderForPost() : postDetail?.id ? uiRenderForPost() :  <View style={{ flex: 1,
-    justifyContent: 'center',}}>
-                <LMLoader />
-              </View>}
+      {!postToEdit ? (
+        uiRenderForPost()
+      ) : postDetail?.id ? (
+        uiRenderForPost()
+      ) : (
+        <View style={{flex: 1, justifyContent: 'center'}}>
+          <LMLoader />
+        </View>
+      )}
       {/* selection options section */}
       {!postToEdit && showOptions && (
         <View>
