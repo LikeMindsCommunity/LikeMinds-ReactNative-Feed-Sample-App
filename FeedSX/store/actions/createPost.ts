@@ -62,7 +62,7 @@ export const setUploadAttachments =
     }
   };
 
-  // edit post api action
+// edit post api action
 export const editPost = (payload?: any) => async (dispatch: Dispatch) => {
   try {
     return await dispatch({

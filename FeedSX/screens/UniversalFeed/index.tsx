@@ -351,7 +351,7 @@ const UniversalFeed = () => {
       handleDeletePost(true);
     }
     if (itemId === EDIT_POST_MENU_ITEM) {
-      NavigationService.navigate(CREATE_POST, postId)
+      NavigationService.navigate(CREATE_POST, postId);
     }
   };
 
@@ -370,7 +370,7 @@ const UniversalFeed = () => {
     const itemPinned = item?.isPinned;
     const itemComments = item?.commentsCount;
     const itemSaved = item?.isSaved;
-    const itemText = item?.text
+    const itemText = item?.text;
 
     return `${id}${itemLiked}${itemPinned}${itemComments}${itemSaved}${itemText}`;
   };

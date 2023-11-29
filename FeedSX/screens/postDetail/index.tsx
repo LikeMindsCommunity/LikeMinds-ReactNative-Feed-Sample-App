@@ -115,7 +115,7 @@ const PostDetail = (props: IProps) => {
   const [localModalVisibility, setLocalModalVisibility] =
     useState(showDeleteModal);
   const [keyboardIsVisible, setKeyboardIsVisible] = useState(false);
-  const [editCommentFocus, setEditCommentFocus] = useState(false)
+  const [editCommentFocus, setEditCommentFocus] = useState(false);
 
   // this function closes the post action list modal
   const closePostActionListModal = () => {
@@ -237,20 +237,21 @@ const PostDetail = (props: IProps) => {
     if (itemId === DELETE_COMMENT_MENU_ITEM) {
       handleDeleteComment(true);
     }
-    if (itemId === 8) {      
-     let commentDetail = getCommentDetail(postDetail?.replies, commentId)
-     setCommentToAdd(commentDetail?.text ? commentDetail.text : '')
-     setTimeout(()=> {
-       setEditCommentFocus(true)
-     },100)
+    if (itemId === 8) {
+      let commentDetail = getCommentDetail(postDetail?.replies, commentId);
+      setCommentToAdd(commentDetail?.text ? commentDetail.text : '');
+      setTimeout(() => {
+        setEditCommentFocus(true);
+      }, 100);
     }
   };
 
   // this function gets the detail of comment whose menu item is clicked
   const getCommentDetail = (
-    comments?: LMCommentUI[], id?: string
-  ): LMCommentUI | undefined => {    
-    let commentId = id ? id : selectedMenuItemCommentId
+    comments?: LMCommentUI[],
+    id?: string,
+  ): LMCommentUI | undefined => {
+    let commentId = id ? id : selectedMenuItemCommentId;
     if (comments) {
       for (const reply of comments) {
         if (reply.id === commentId) {
@@ -472,17 +473,21 @@ const PostDetail = (props: IProps) => {
   const commentEdit = async () => {
     let payload = {
       commentId: selectedMenuItemCommentId,
-      commentText: commentToAdd
-    }
-   await dispatch(editCommentStateHandler(payload) as any)
+      commentText: commentToAdd,
+    };
+    await dispatch(editCommentStateHandler(payload) as any);
     let editCommentResponse = await dispatch(
       editComment(
-        EditCommentRequest.builder().setcommentId(selectedMenuItemCommentId).setpostId(postDetail?.id).settext(commentToAdd).build()
+        EditCommentRequest.builder()
+          .setcommentId(selectedMenuItemCommentId)
+          .setpostId(postDetail?.id)
+          .settext(commentToAdd)
+          .build(),
       ) as any,
     );
-    if(editCommentResponse) {
-     setEditCommentFocus(false)
-     setCommentToAdd('')
+    if (editCommentResponse) {
+      setEditCommentFocus(false);
+      setCommentToAdd('');
     }
     return editCommentResponse;
   };
@@ -674,7 +679,9 @@ const PostDetail = (props: IProps) => {
           autoFocus={
             props.route.params[1] === NAVIGATED_FROM_COMMENT
               ? true
-              : replyOnComment.textInputFocus ? true : editCommentFocus
+              : replyOnComment.textInputFocus
+              ? true
+              : editCommentFocus
           }
           placeholderText="Write a comment"
           placeholderTextColor="#9B9B9B"
@@ -684,10 +691,12 @@ const PostDetail = (props: IProps) => {
           rightIcon={{
             onTap: () => {
               commentToAdd
-                ? editCommentFocus ? commentEdit(): replyOnComment.textInputFocus
+                ? editCommentFocus
+                  ? commentEdit()
+                  : replyOnComment.textInputFocus
                   ? addNewReply(postDetail?.id, replyOnComment.commentId)
-                  : addNewComment(postDetail?.id) : {}
-                
+                  : addNewComment(postDetail?.id)
+                : {};
             },
             icon: {
               type: 'png',

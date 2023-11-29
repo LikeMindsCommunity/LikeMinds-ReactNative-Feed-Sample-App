@@ -201,33 +201,33 @@ export const deleteCommentStateHandler =
     }
   };
 
-  // edit comment api action
-  export const editComment = (payload?: any) => async (dispatch: Dispatch) => {
-    try {
-      return await dispatch({
-        type: EDIT_COMMENT_SUCCESS,
-        [CALL_API]: {
-          func: lmFeedClient.editComment(payload),
-          body: payload,
-          types: [EDIT_COMMENT, EDIT_COMMENT_SUCCESS, EDIT_COMMENT_FAILED],
-          showLoader: true,
-        },
-      });
-    } catch (error) {
-      Alert.alert(`${error}`);
-    }
-  };
-
-  // delete post state handler action
-export const editCommentStateHandler =
-(payload?: any) => async (dispatch: Dispatch) => {
+// edit comment api action
+export const editComment = (payload?: any) => async (dispatch: Dispatch) => {
   try {
-    dispatch({
-      type: EDIT_COMMENT_STATE,
-      body: payload,
+    return await dispatch({
+      type: EDIT_COMMENT_SUCCESS,
+      [CALL_API]: {
+        func: lmFeedClient.editComment(payload),
+        body: payload,
+        types: [EDIT_COMMENT, EDIT_COMMENT_SUCCESS, EDIT_COMMENT_FAILED],
+        showLoader: true,
+      },
     });
-    return;
   } catch (error) {
     Alert.alert(`${error}`);
   }
 };
+
+// delete post state handler action
+export const editCommentStateHandler =
+  (payload?: any) => async (dispatch: Dispatch) => {
+    try {
+      dispatch({
+        type: EDIT_COMMENT_STATE,
+        body: payload,
+      });
+      return;
+    } catch (error) {
+      Alert.alert(`${error}`);
+    }
+  };
