@@ -564,14 +564,14 @@ const PostDetail = (props: IProps) => {
                                 }}
                                 // this handles the pagination of child replies on click of view more
                                 onTapViewMore={(
-                                  val: any,
+                                  pageValue,
                                   repliesResponseCallback,
                                 ) => {
                                   getCommentsReplies(
                                     item?.postId,
                                     item?.id,
                                     repliesResponseCallback,
-                                    val,
+                                    pageValue,
                                   );
                                 }}
                                 // this hanldes the functionality on click of reply text to add reply to an comment
@@ -693,7 +693,7 @@ const PostDetail = (props: IProps) => {
               assetPath: require('../../assets/images/send_icon3x.png'),
               iconStyle: {opacity: commentToAdd ? 1 : 0.7},
             },
-            clickDisable: commentToAdd ? false : true,
+            isClickable: commentToAdd ? false : true,
           }}
         />
       </KeyboardAvoidingView>
