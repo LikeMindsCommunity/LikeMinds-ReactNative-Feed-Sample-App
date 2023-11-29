@@ -328,11 +328,14 @@ const CreatePost = (props: any) => {
     return getPostResponse;
   };
 
+  // this checks if the post has to be edited or not and call the get post api
   useEffect(() => {
     if (postToEdit) {
       getPostData();
     }
   }, [postToEdit]);
+
+  // this sets the post data in the local state to render UI
   useEffect(() => {
     if (postDetail?.text) {
       setPostContentText(postDetail?.text);
@@ -358,6 +361,7 @@ const CreatePost = (props: any) => {
     }
   }, [postDetail]);
 
+  //  this function calls the edit post api
   const postEdit = async () => {
     let editPostResponse = dispatch(
       editPost(
@@ -374,11 +378,15 @@ const CreatePost = (props: any) => {
     }
     return editPostResponse;
   };
+
+  // this renders the post detail UI
   const uiRenderForPost = () => {
     return (
       <ScrollView
-        style={postToEdit ? styles.scrollViewStyleWithoutOptions :
-          showOptions
+        style={
+          postToEdit
+            ? styles.scrollViewStyleWithoutOptions
+            : showOptions
             ? styles.scrollViewStyleWithOptions
             : styles.scrollViewStyleWithoutOptions
         }>
@@ -473,28 +481,30 @@ const CreatePost = (props: any) => {
             )}
         </View>
         {/* add more media button section */}
-        {!postToEdit && allAttachment.length > 0 && allAttachment.length < 10 && (
-          <LMButton
-            onTap={
-              formattedMediaAttachments.length > 0
-                ? () => handleGallery(SELECT_BOTH)
-                : formattedDocumentAttachments.length > 0
-                ? () => handleDocument()
-                : () => {}
-            }
-            icon={{
-              assetPath: require('../../assets/images/plusAdd_icon3x.png'),
-              type: 'png',
-              height: 20,
-              width: 20,
-            }}
-            text={{
-              text: ADD_MORE_MEDIA,
-              textStyle: styles.addMoreButtonText,
-            }}
-            buttonStyle={styles.addMoreButtonView}
-          />
-        )}
+        {!postToEdit &&
+          allAttachment.length > 0 &&
+          allAttachment.length < 10 && (
+            <LMButton
+              onTap={
+                formattedMediaAttachments.length > 0
+                  ? () => handleGallery(SELECT_BOTH)
+                  : formattedDocumentAttachments.length > 0
+                  ? () => handleDocument()
+                  : () => {}
+              }
+              icon={{
+                assetPath: require('../../assets/images/plusAdd_icon3x.png'),
+                type: 'png',
+                height: 20,
+                width: 20,
+              }}
+              text={{
+                text: ADD_MORE_MEDIA,
+                textStyle: styles.addMoreButtonText,
+              }}
+              buttonStyle={styles.addMoreButtonView}
+            />
+          )}
       </ScrollView>
     );
   };
@@ -551,12 +561,14 @@ const CreatePost = (props: any) => {
           </TouchableOpacity>
         }
       />
+      {/* handles the UI to be rendered for edit post and create post */}
       {!postToEdit ? (
         uiRenderForPost()
       ) : postDetail?.id ? (
         uiRenderForPost()
       ) : (
-        <View style={{flex: 1, justifyContent: 'center'}}>
+        // loader view section
+        <View style={styles.rowAlignMent}>
           <LMLoader />
         </View>
       )}

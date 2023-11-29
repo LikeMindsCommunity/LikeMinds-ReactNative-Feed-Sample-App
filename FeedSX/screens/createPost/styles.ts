@@ -81,4 +81,5 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
   },
   selectingMediaText: {color: '#666666', marginTop: 12},
+  rowAlignMent: {flex: 1, justifyContent: 'center'},
 });

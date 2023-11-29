@@ -468,6 +468,7 @@ const PostDetail = (props: IProps) => {
     };
   }, []);
 
+  // this function calls the edit comment api
   const commentEdit = async () => {
     let payload = {
       commentId: selectedMenuItemCommentId,
