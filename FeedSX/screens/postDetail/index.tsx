@@ -4,6 +4,7 @@ import {
   Keyboard,
   KeyboardAvoidingView,
   Platform,
+  RefreshControl,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -26,6 +27,7 @@ import {
   getComments,
   getPost,
   likeComment,
+  refreshPostDetail,
   replyComment,
   replyCommentStateHandler,
 } from '../../store/actions/postDetail';
@@ -112,6 +114,26 @@ const PostDetail = (props: IProps) => {
   const [localModalVisibility, setLocalModalVisibility] =
     useState(showDeleteModal);
   const [keyboardIsVisible, setKeyboardIsVisible] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [localRefresh, setLocalRefresh] = useState(false);
+
+  // this function is executed on pull to refresh
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    setLocalRefresh(true);
+    // calling getPost API
+    await dispatch(
+      refreshPostDetail(
+        GetPostRequest.builder()
+          .setpostId(props.route.params[0])
+          .setpage(1)
+          .setpageSize(10)
+          .build(),
+      ) as any,
+    );
+    setLocalRefresh(false);
+    setRefreshing(false);
+  }, [dispatch]);
 
   // this function closes the post action list modal
   const closePostActionListModal = () => {
@@ -499,6 +521,13 @@ const PostDetail = (props: IProps) => {
                 {postDetail?.commentsCount > 0 ? (
                   <View>
                     <FlatList
+                      refreshing={refreshing}
+                      refreshControl={
+                        <RefreshControl
+                          refreshing={refreshing}
+                          onRefresh={onRefresh}
+                        />
+                      }
                       keyboardShouldPersistTaps={'handled'}
                       ListHeaderComponent={
                         // this renders the post section
@@ -608,7 +637,7 @@ const PostDetail = (props: IProps) => {
             ) : (
               // this renders the loader until the data is fetched
               <View style={styles.loaderView}>
-                <LMLoader />
+                {!localRefresh && <LMLoader />}
               </View>
             )}
           </View>
