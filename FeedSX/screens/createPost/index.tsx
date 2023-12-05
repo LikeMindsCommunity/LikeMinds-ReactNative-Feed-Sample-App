@@ -5,10 +5,15 @@ import {
   SafeAreaView,
   Text,
   ScrollView,
+  Pressable,
 } from 'react-native';
-import React, {useCallback, useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {
+  detectMentions,
   detectURLs,
+  extractPathfromRouteQuery,
+  replaceLastMention,
+  replaceMentionValues,
   requestStoragePermission,
   selectDocument,
   selectImageVideo,
@@ -53,6 +58,7 @@ import {
   DecodeURLRequest,
   EditPostRequest,
   GetPostRequest,
+  GetTaggingListRequest,
 } from '@likeminds.community/feed-js-beta';
 import _ from 'lodash';
 import {
@@ -72,7 +78,8 @@ import {
 import {styles} from './styles';
 import {showToastMessage} from '../../store/actions/toast';
 import LMLoader from '../../../LikeMinds-ReactNative-Feed-UI/src/base/LMLoader';
-import {getPost} from '../../store/actions/postDetail';
+import {getPost, getTaggingList} from '../../store/actions/postDetail';
+import {FlashList} from '@shopify/flash-list';
 
 const CreatePost = (props: any) => {
   const memberData = useAppSelector(state => state.feed.member);
@@ -92,6 +99,14 @@ const CreatePost = (props: any) => {
   const postToEdit = props?.route?.params;
   const [postDetail, setPostDetail] = useState({} as LMPostUI);
   const [postContentText, setPostContentText] = useState('');
+  let myRef = useRef<any>();
+  const [taggedUserName, setTaggedUserName] = useState('');
+  const [debounceTimeout, setDebounceTimeout] = useState<any>(null);
+  const [page, setPage] = useState(1);
+  const [userTaggingListHeight, setUserTaggingListHeight] = useState<any>(116);
+  const [groupTags, setGroupTags] = useState<any>([]);
+  const [isUserTagging, setIsUserTagging] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   // function handles the selection of images and videos
   const setSelectedImageVideo = (type: string) => {
@@ -363,13 +378,25 @@ const CreatePost = (props: any) => {
 
   //  this function calls the edit post api
   const postEdit = async () => {
+    let conversationText = replaceMentionValues(
+      postContentText,
+      ({id, name}) => {
+        // example ID = `user_profile/8619d45e-9c4c-4730-af8e-4099fe3dcc4b`
+        let PATH = extractPathfromRouteQuery(id);
+        if (!!!PATH) {
+          return `<<${name}|route://${name}>>`;
+        } else {
+          return `<<${name}|route://${id}>>`;
+        }
+      },
+    );
     const editPostResponse = dispatch(
       editPost(
         EditPostRequest.builder()
           .setHeading('')
           .setattachments([...allAttachment, ...formattedLinkAttachments])
           .setpostId(postDetail?.id)
-          .settext(postContentText)
+          .settext(conversationText)
           .build(),
       ) as any,
     );
@@ -377,6 +404,93 @@ const CreatePost = (props: any) => {
       NavigationService.goBack();
     }
     return editPostResponse;
+  };
+
+  const handleInputChange = async (e: any) => {
+    setPostContentText(e);
+
+    const newMentions = detectMentions(e);
+
+    if (newMentions.length > 0) {
+      const length = newMentions.length;
+      setTaggedUserName(newMentions[length - 1]);
+    }
+
+    // debouncing logic
+    clearTimeout(debounceTimeout);
+
+    let len = newMentions.length;
+    if (len > 0) {
+      const timeoutID = setTimeout(async () => {
+        setPage(1);
+        const res = await dispatch(
+          getTaggingList(
+            GetTaggingListRequest.builder()
+              .setsearchName(newMentions[len - 1])
+              .setpage(1)
+              .setpageSize(10)
+              .build(),
+          ) as any,
+        );
+
+        if (len > 0) {
+          let groupTagsLength = res?.members?.length;
+          let arrLength = groupTagsLength;
+          if (arrLength >= 5) {
+            setUserTaggingListHeight(5 * 58);
+          } else if (arrLength < 5) {
+            let height = groupTagsLength * 100;
+            setUserTaggingListHeight(height);
+          }
+          setGroupTags(res?.members);
+          setIsUserTagging(true);
+        }
+      }, 500);
+
+      setDebounceTimeout(timeoutID);
+    } else {
+      if (isUserTagging) {
+        setGroupTags([]);
+        setIsUserTagging(false);
+      }
+    }
+  };
+
+  const loadData = async (newPage: number) => {
+    setIsLoading(true);
+    const res = await dispatch(
+      getTaggingList(
+        GetTaggingListRequest.builder()
+          .setsearchName(taggedUserName)
+          .setpage(newPage)
+          .setpageSize(10)
+          .build(),
+      ) as any,
+    );
+    if (!!res) {
+      setGroupTags([...groupTags, ...res?.members]);
+      setIsLoading(false);
+    }
+  };
+
+  const handleLoadMore = () => {
+    let userTaggingListLength = groupTags.length;
+    if (!isLoading && userTaggingListLength > 0) {
+      // checking if conversations length is greater the 15 as it convered all the screen sizes of mobiles, and pagination API will never call if screen is not full messages.
+      if (userTaggingListLength >= 10 * page) {
+        const newPage = page + 1;
+        setPage(newPage);
+        loadData(newPage);
+      }
+    }
+  };
+
+  const renderFooter = () => {
+    return isLoading ? (
+      <View style={{paddingVertical: 20}}>
+        <LMLoader size={15} />
+      </View>
+    ) : null;
   };
 
   // this renders the post detail UI
@@ -406,12 +520,112 @@ const CreatePost = (props: any) => {
           placeholderTextColor="#0F1E3D66"
           inputTextStyle={styles.textInputView}
           multilineField
+          inputRef={myRef}
           inputText={postContentText}
-          onType={val => {
-            setPostContentText(val);
-          }}
+          onType={handleInputChange}
           autoFocus={postToEdit ? true : false}
+          partTypes={[
+            {
+              trigger: '@', // Should be a single character like '@' or '#'
+              textStyle: {
+                color: 'blue',
+              }, // The mention style in the input
+            },
+          ]}
         />
+
+        {/* users tagging list */}
+        {groupTags && isUserTagging ? (
+          <View
+            style={[
+              {
+                borderTopRightRadius: 10,
+                borderTopLeftRadius: 10,
+                width: '100%',
+                position: 'relative',
+                backgroundColor: 'white',
+                borderColor: '#000',
+                overflow: 'hidden',
+                // paddingBottom: replyOnComment.textInputFocus
+                // ? Layout.normalize(74)
+                // : Layout.normalize(44),
+              },
+              {
+                backgroundColor: '#fff',
+                height: userTaggingListHeight,
+              },
+            ]}>
+            <FlashList
+              data={[...groupTags]}
+              renderItem={({item, index}: any) => {
+                return (
+                  <Pressable
+                    onPress={() => {
+                      let uuid = item?.sdk_client_info?.uuid;
+                      const res = replaceLastMention(
+                        postContentText,
+                        taggedUserName,
+                        item?.name,
+                        uuid ? `user_profile/${uuid}` : uuid,
+                      );
+                      setPostContentText(res);
+                      setGroupTags([]);
+                      setIsUserTagging(false);
+                    }}
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      paddingHorizontal: 10,
+                      paddingVertical: 5,
+                      borderBottomColor: '#e0e0e0',
+                      borderBottomWidth: 1,
+                    }}>
+                    <LMProfilePicture
+                      fallbackText={item?.name}
+                      fallbackTextBoxStyle={{
+                        borderRadius: 50,
+                        marginRight: 10,
+                      }}
+                      size={40}
+                    />
+
+                    <View
+                      style={[
+                        {
+                          flex: 1,
+                          paddingVertical: 15,
+                          borderBottomColor: 'grey',
+                        },
+                        {
+                          borderBottomWidth: 0.2,
+                          gap: Platform.OS === 'ios' ? 5 : 0,
+                        },
+                      ]}>
+                      <Text
+                        style={[{fontSize: 14, color: '#000'}]}
+                        numberOfLines={1}>
+                        {item?.name}
+                      </Text>
+                    </View>
+                  </Pressable>
+                );
+              }}
+              extraData={{
+                value: [postContentText, groupTags],
+              }}
+              estimatedItemSize={15}
+              keyboardShouldPersistTaps={'handled'}
+              onEndReached={handleLoadMore}
+              onEndReachedThreshold={1}
+              bounces={false}
+              ListFooterComponent={renderFooter}
+              keyExtractor={(item: any, index) => {
+                return index?.toString();
+              }}
+            />
+          </View>
+        ) : null}
 
         {/* selected media section */}
         <View>

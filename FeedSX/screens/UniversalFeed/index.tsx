@@ -81,7 +81,11 @@ import {
   LIKES_LIST,
   POST_DETAIL,
 } from '../../constants/screenNames';
-import {uploadFilesToAWS} from '../../utils';
+import {
+  extractPathfromRouteQuery,
+  replaceMentionValues,
+  uploadFilesToAWS,
+} from '../../utils';
 import STYLES from '../../constants/Styles';
 import {showToastMessage} from '../../store/actions/toast';
 import {clearPostDetail} from '../../store/actions/postDetail';
@@ -169,6 +173,15 @@ const UniversalFeed = () => {
 
   // this function adds a new post
   const postAdd = useCallback(async () => {
+    let conversationText = replaceMentionValues(postContent, ({id, name}) => {
+      // example ID = `user_profile/8619d45e-9c4c-4730-af8e-4099fe3dcc4b`
+      let PATH = extractPathfromRouteQuery(id);
+      if (!!!PATH) {
+        return `<<${name}|route://${name}>>`;
+      } else {
+        return `<<${name}|route://${id}>>`;
+      }
+    });
     const uploadPromises = mediaAttachmemnts?.map(
       async (item: LMAttachmentUI) => {
         return uploadFilesToAWS(
@@ -186,7 +199,7 @@ const UniversalFeed = () => {
       addPost(
         AddPostRequest.builder()
           .setAttachments([...updatedAttachments, ...linkAttachments])
-          .setText(postContent)
+          .setText(conversationText)
           .build(),
       ) as any,
     );

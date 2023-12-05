@@ -28,6 +28,12 @@ import {
   EDIT_COMMENT_FAILED,
   EDIT_COMMENT,
   EDIT_COMMENT_STATE,
+  TAGGING_LIST_SUCCESS,
+  TAGGING_LIST_DATA,
+  TAGGING_LIST_FAILED,
+  POST_DATA_REFRESH_SUCCESS,
+  POST_DATA_REFRESH,
+  POST_DATA_REFRESH_FAILED,
 } from '../types/types';
 import {CALL_API} from '../apiMiddleware';
 import {lmFeedClient} from '../../..';
@@ -227,6 +233,45 @@ export const editCommentStateHandler =
         body: payload,
       });
       return;
+    } catch (error) {
+      Alert.alert(`${error}`);
+    }
+  };
+
+// edit comment api action
+export const getTaggingList = (payload?: any) => async (dispatch: Dispatch) => {
+  try {
+    return await dispatch({
+      type: TAGGING_LIST_SUCCESS,
+      [CALL_API]: {
+        func: lmFeedClient.getTaggingList(payload),
+        body: payload,
+        types: [TAGGING_LIST_DATA, TAGGING_LIST_SUCCESS, TAGGING_LIST_FAILED],
+        showLoader: true,
+      },
+    });
+  } catch (error) {
+    Alert.alert(`${error}`);
+  }
+};
+
+// refresh feed API action
+export const refreshPostDetail =
+  (payload?: any) => async (dispatch: Dispatch) => {
+    try {
+      return await dispatch({
+        type: POST_DATA_REFRESH_SUCCESS,
+        [CALL_API]: {
+          func: lmFeedClient?.getPost(payload),
+          body: payload,
+          types: [
+            POST_DATA_REFRESH,
+            POST_DATA_REFRESH_SUCCESS,
+            POST_DATA_REFRESH_FAILED,
+          ],
+          showLoader: true,
+        },
+      });
     } catch (error) {
       Alert.alert(`${error}`);
     }

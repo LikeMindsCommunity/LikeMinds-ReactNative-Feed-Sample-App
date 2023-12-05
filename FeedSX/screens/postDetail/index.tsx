@@ -4,19 +4,22 @@ import {
   Keyboard,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
+  RefreshControl,
   SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
-import React, {useCallback, useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {
   LMCommentItem,
   LMCommentUI,
   LMHeader,
   LMInputText,
   LMPost,
+  LMProfilePicture,
 } from '../../../LikeMinds-ReactNative-Feed-UI';
 import {useDispatch} from 'react-redux';
 import {
@@ -27,7 +30,9 @@ import {
   editCommentStateHandler,
   getComments,
   getPost,
+  getTaggingList,
   likeComment,
+  refreshPostDetail,
   replyComment,
   replyCommentStateHandler,
 } from '../../store/actions/postDetail';
@@ -36,6 +41,7 @@ import {
   EditCommentRequest,
   GetCommentRequest,
   GetPostRequest,
+  GetTaggingListRequest,
   LikeCommentRequest,
   LikePostRequest,
   PinPostRequest,
@@ -77,6 +83,14 @@ import LMLoader from '../../../LikeMinds-ReactNative-Feed-UI/src/base/LMLoader';
 import {TouchableOpacity} from 'react-native-gesture-handler';
 import {styles} from './styles';
 import Layout from '../../constants/Layout';
+import {FlashList} from '@shopify/flash-list';
+import {
+  detectMentions,
+  extractPathfromRouteQuery,
+  replaceLastMention,
+  replaceMentionValues,
+} from '../../utils';
+import {convertToMentionValues} from '../../../LikeMinds-ReactNative-Feed-UI/src/base/LMInputText/utils';
 
 interface IProps {
   navigation: object;
@@ -116,6 +130,14 @@ const PostDetail = (props: IProps) => {
     useState(showDeleteModal);
   const [keyboardIsVisible, setKeyboardIsVisible] = useState(false);
   const [editCommentFocus, setEditCommentFocus] = useState(false);
+  let myRef = useRef<any>();
+  const [taggedUserName, setTaggedUserName] = useState('');
+  const [debounceTimeout, setDebounceTimeout] = useState<any>(null);
+  const [page, setPage] = useState(1);
+  const [userTaggingListHeight, setUserTaggingListHeight] = useState<any>(116);
+  const [groupTags, setGroupTags] = useState<any>([]);
+  const [isUserTagging, setIsUserTagging] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   // this function closes the post action list modal
   const closePostActionListModal = () => {
@@ -239,10 +261,21 @@ const PostDetail = (props: IProps) => {
     }
     if (itemId === 8) {
       const commentDetail = getCommentDetail(postDetail?.replies, commentId);
-      setCommentToAdd(commentDetail?.text ? commentDetail.text : '');
-      setTimeout(() => {
-        setEditCommentFocus(true);
-      }, 100);
+      // setCommentToAdd(commentDetail?.text ? commentDetail.text : '');
+      // setTimeout(() => {
+      //   setEditCommentFocus(true);
+      // }, 100);
+      let convertedText = convertToMentionValues(
+        `${commentDetail?.text} `, // to put extra space after a message whwn we want to edit a message
+        ({URLwithID, name}) => {
+          if (!!!URLwithID) {
+            return `@[${name}](${name})`;
+          } else {
+            return `@[${name}](${URLwithID})`;
+          }
+        },
+      );
+      setCommentToAdd(convertedText);
     }
   };
 
@@ -331,10 +364,19 @@ const PostDetail = (props: IProps) => {
 
   // this functions calls the add new comment api
   const addNewComment = async (postId: string) => {
+    let conversationText = replaceMentionValues(commentToAdd, ({id, name}) => {
+      // example ID = `user_profile/8619d45e-9c4c-4730-af8e-4099fe3dcc4b`
+      let PATH = extractPathfromRouteQuery(id);
+      if (!!!PATH) {
+        return `<<${name}|route://${name}>>`;
+      } else {
+        return `<<${name}|route://${id}>>`;
+      }
+    });
     const currentDate = new Date();
     const payload = {
       postId: postId,
-      newComment: commentToAdd,
+      newComment: conversationText,
       tempId: -currentDate.getTime(),
     };
     setCommentToAdd('');
@@ -353,10 +395,19 @@ const PostDetail = (props: IProps) => {
 
   // this functions calls the add new reply to a comment api
   const addNewReply = async (postId: string, commentId: string) => {
+    let conversationText = replaceMentionValues(commentToAdd, ({id, name}) => {
+      // example ID = `user_profile/8619d45e-9c4c-4730-af8e-4099fe3dcc4b`
+      let PATH = extractPathfromRouteQuery(id);
+      if (!!!PATH) {
+        return `<<${name}|route://${name}>>`;
+      } else {
+        return `<<${name}|route://${id}>>`;
+      }
+    });
     const currentDate = new Date();
     const payload = {
       postId: postId,
-      newComment: commentToAdd,
+      newComment: conversationText,
       tempId: -currentDate.getTime(),
       commentId: commentId,
     };
@@ -471,9 +522,18 @@ const PostDetail = (props: IProps) => {
 
   // this function calls the edit comment api
   const commentEdit = async () => {
+    let conversationText = replaceMentionValues(commentToAdd, ({id, name}) => {
+      // example ID = `user_profile/8619d45e-9c4c-4730-af8e-4099fe3dcc4b`
+      let PATH = extractPathfromRouteQuery(id);
+      if (!!!PATH) {
+        return `<<${name}|route://${name}>>`;
+      } else {
+        return `<<${name}|route://${id}>>`;
+      }
+    });
     const payload = {
       commentId: selectedMenuItemCommentId,
-      commentText: commentToAdd,
+      commentText: conversationText,
     };
     await dispatch(editCommentStateHandler(payload) as any);
     const editCommentResponse = await dispatch(
@@ -481,7 +541,7 @@ const PostDetail = (props: IProps) => {
         EditCommentRequest.builder()
           .setcommentId(selectedMenuItemCommentId)
           .setpostId(postDetail?.id)
-          .settext(commentToAdd)
+          .settext(payload.commentText)
           .build(),
       ) as any,
     );
@@ -490,6 +550,92 @@ const PostDetail = (props: IProps) => {
       setCommentToAdd('');
     }
     return editCommentResponse;
+  };
+
+  const handleInputChange = async (e: any) => {
+    setCommentToAdd(e);
+
+    const newMentions = detectMentions(e);
+
+    if (newMentions.length > 0) {
+      const length = newMentions.length;
+      setTaggedUserName(newMentions[length - 1]);
+    }
+
+    // debouncing logic
+    clearTimeout(debounceTimeout);
+
+    let len = newMentions.length;
+    if (len > 0) {
+      const timeoutID = setTimeout(async () => {
+        setPage(1);
+        const res = await dispatch(
+          getTaggingList(
+            GetTaggingListRequest.builder()
+              .setsearchName(newMentions[len - 1])
+              .setpage(1)
+              .setpageSize(10)
+              .build(),
+          ) as any,
+        );
+        if (len > 0) {
+          let groupTagsLength = res?.members?.length;
+          let arrLength = groupTagsLength;
+          if (arrLength >= 5) {
+            setUserTaggingListHeight(5 * 58);
+          } else if (arrLength < 5) {
+            let height = groupTagsLength * 100;
+            setUserTaggingListHeight(height);
+          }
+          setGroupTags(res?.members);
+          setIsUserTagging(true);
+        }
+      }, 500);
+
+      setDebounceTimeout(timeoutID);
+    } else {
+      if (isUserTagging) {
+        setGroupTags([]);
+        setIsUserTagging(false);
+      }
+    }
+  };
+
+  const loadData = async (newPage: number) => {
+    setIsLoading(true);
+    const res = await dispatch(
+      getTaggingList(
+        GetTaggingListRequest.builder()
+          .setsearchName(taggedUserName)
+          .setpage(newPage)
+          .setpageSize(10)
+          .build(),
+      ) as any,
+    );
+    if (!!res) {
+      setGroupTags([...groupTags, ...res?.members]);
+      setIsLoading(false);
+    }
+  };
+
+  const handleLoadMore = () => {
+    let userTaggingListLength = groupTags.length;
+    if (!isLoading && userTaggingListLength > 0) {
+      // checking if conversations length is greater the 15 as it convered all the screen sizes of mobiles, and pagination API will never call if screen is not full messages.
+      if (userTaggingListLength >= 10 * page) {
+        const newPage = page + 1;
+        setPage(newPage);
+        loadData(newPage);
+      }
+    }
+  };
+
+  const renderFooter = () => {
+    return isLoading ? (
+      <View style={{paddingVertical: 20}}>
+        <LMLoader size={15} />
+      </View>
+    ) : null;
   };
 
   return (
@@ -522,135 +668,133 @@ const PostDetail = (props: IProps) => {
           }}
         />
         {/* post detail view */}
-        {postDetail?.id && (
+        {Object.keys(postDetail).length > 0 ? (
           <View
             style={StyleSheet.flatten([
               styles.mainContainer,
               {
-                paddingBottom: replyOnComment.textInputFocus
-                  ? Layout.normalize(74)
-                  : Layout.normalize(44),
+                paddingBottom:
+                  groupTags && isUserTagging
+                    ? 0
+                    : replyOnComment.textInputFocus
+                    ? Layout.normalize(74)
+                    : Layout.normalize(44),
               },
             ])}>
-            {postDetail?.id ? (
-              <>
-                {/* this renders when the post has commentsCount greater than 0 */}
-                {postDetail?.commentsCount > 0 ? (
-                  <View>
-                    <FlatList
-                      keyboardShouldPersistTaps={'handled'}
-                      ListHeaderComponent={
-                        // this renders the post section
+            <>
+              {/* this renders when the post has commentsCount greater than 0 */}
+              {postDetail?.commentsCount > 0 ? (
+                <View>
+                  <FlatList
+                    keyboardShouldPersistTaps={'handled'}
+                    ListHeaderComponent={
+                      // this renders the post section
+                      <>
+                        {renderPostDetail()}
+                        <Text style={styles.commentCountText}>
+                          {postDetail.commentsCount > 1
+                            ? `${postDetail.commentsCount} Comments`
+                            : `${postDetail.commentsCount} Comment`}
+                        </Text>
+                      </>
+                    }
+                    data={postDetail?.replies}
+                    renderItem={({item}) => {
+                      // this renders the comments section
+                      return (
                         <>
-                          {renderPostDetail()}
-                          <Text style={styles.commentCountText}>
-                            {postDetail.commentsCount > 1
-                              ? `${postDetail.commentsCount} Comments`
-                              : `${postDetail.commentsCount} Comment`}
-                          </Text>
-                        </>
-                      }
-                      data={postDetail?.replies}
-                      renderItem={({item}) => {
-                        // this renders the comments section
-                        return (
-                          <>
-                            {item && (
-                              <LMCommentItem
-                                comment={item}
-                                // this calls the getCommentsReplies function on click of number of child replies text
-                                onTapReplies={repliesResponseCallback => {
-                                  dispatch(clearComments(item?.id) as any);
-                                  getCommentsReplies(
-                                    item?.postId,
-                                    item?.id,
-                                    repliesResponseCallback,
-                                    1,
-                                  );
-                                }}
-                                // this handles the pagination of child replies on click of view more
-                                onTapViewMore={(
-                                  pageValue,
+                          {item && (
+                            <LMCommentItem
+                              comment={item}
+                              // this calls the getCommentsReplies function on click of number of child replies text
+                              onTapReplies={repliesResponseCallback => {
+                                dispatch(clearComments(item?.id) as any);
+                                getCommentsReplies(
+                                  item?.postId,
+                                  item?.id,
                                   repliesResponseCallback,
-                                ) => {
-                                  getCommentsReplies(
+                                  1,
+                                );
+                              }}
+                              // this handles the pagination of child replies on click of view more
+                              onTapViewMore={(
+                                pageValue,
+                                repliesResponseCallback,
+                              ) => {
+                                getCommentsReplies(
+                                  item?.postId,
+                                  item?.id,
+                                  repliesResponseCallback,
+                                  pageValue,
+                                );
+                              }}
+                              // this hanldes the functionality on click of reply text to add reply to an comment
+                              replyTextProps={{
+                                onTap: () => {
+                                  setReplyOnComment({
+                                    textInputFocus: true,
+                                    commentId: item?.id,
+                                  });
+                                  setReplyToUsername(item?.user?.name);
+                                },
+                              }}
+                              // view more text style
+                              viewMoreRepliesProps={{
+                                text: '',
+                                textStyle: styles.viewMoreText,
+                              }}
+                              // comment menu item props
+                              commentMenu={{
+                                postId: item?.id,
+                                menuItems: item?.menuItems,
+                                modalPosition: modalPositionComment,
+                                modalVisible: showCommentActionListModal,
+                                onCloseModal: closeCommentActionListModal,
+                                onSelected: (commentId, itemId) =>
+                                  onCommentMenuItemSelect(commentId, itemId),
+                              }}
+                              // this executes on click of like icon of comment
+                              likeIconButton={{
+                                onTap: id => {
+                                  commentLikeHandler(item?.postId, id);
+                                },
+                              }}
+                              // this executes on click of like text of comment
+                              likeTextButton={{
+                                onTap: id =>
+                                  NavigationService.navigate(LIKES_LIST, [
+                                    COMMENT_LIKES,
+                                    id,
                                     item?.postId,
-                                    item?.id,
-                                    repliesResponseCallback,
-                                    pageValue,
-                                  );
-                                }}
-                                // this hanldes the functionality on click of reply text to add reply to an comment
-                                replyTextProps={{
-                                  onTap: () => {
-                                    setReplyOnComment({
-                                      textInputFocus: true,
-                                      commentId: item?.id,
-                                    });
-                                    setReplyToUsername(item?.user?.name);
-                                  },
-                                }}
-                                // view more text style
-                                viewMoreRepliesProps={{
-                                  text: '',
-                                  textStyle: styles.viewMoreText,
-                                }}
-                                // comment menu item props
-                                commentMenu={{
-                                  postId: item?.id,
-                                  menuItems: item?.menuItems,
-                                  modalPosition: modalPositionComment,
-                                  modalVisible: showCommentActionListModal,
-                                  onCloseModal: closeCommentActionListModal,
-                                  onSelected: (commentId, itemId) =>
-                                    onCommentMenuItemSelect(commentId, itemId),
-                                }}
-                                // this executes on click of like icon of comment
-                                likeIconButton={{
-                                  onTap: id => {
-                                    commentLikeHandler(item?.postId, id);
-                                  },
-                                }}
-                                // this executes on click of like text of comment
-                                likeTextButton={{
-                                  onTap: id =>
-                                    NavigationService.navigate(LIKES_LIST, [
-                                      COMMENT_LIKES,
-                                      id,
-                                      item?.postId,
-                                    ]),
-                                }}
-                              />
-                            )}
-                          </>
-                        );
-                      }}
-                      onEndReachedThreshold={0.3}
-                      onEndReached={() => {
-                        setCommentPageNumber(commentPageNumber + 1);
-                      }}
-                    />
+                                  ]),
+                              }}
+                            />
+                          )}
+                        </>
+                      );
+                    }}
+                    onEndReachedThreshold={0.3}
+                    onEndReached={() => {
+                      setCommentPageNumber(commentPageNumber + 1);
+                    }}
+                  />
+                </View>
+              ) : (
+                // this section renders if the post has 0 comments
+                <ScrollView keyboardShouldPersistTaps={'handled'}>
+                  {renderPostDetail()}
+                  <View style={styles.noCommentSection}>
+                    <Text style={styles.noCommentText}>No comment found</Text>
+                    <Text style={styles.lightGreyColorText}>
+                      Be the first one to comment
+                    </Text>
                   </View>
-                ) : (
-                  // this section renders if the post has 0 comments
-                  <ScrollView keyboardShouldPersistTaps={'handled'}>
-                    {renderPostDetail()}
-                    <View style={styles.noCommentSection}>
-                      <Text style={styles.noCommentText}>No comment found</Text>
-                      <Text style={styles.lightGreyColorText}>
-                        Be the first one to comment
-                      </Text>
-                    </View>
-                  </ScrollView>
-                )}
-              </>
-            ) : (
-              // this renders the loader until the data is fetched
-              <View style={styles.loaderView}>
-                <LMLoader />
-              </View>
-            )}
+                </ScrollView>
+              )}
+            </>
           </View>
+        ) : (
+          <View style={styles.loaderView}></View>
         )}
         {/* replying to username view which renders when the user is adding a reply to a comment */}
         {replyOnComment.textInputFocus && (
@@ -673,8 +817,118 @@ const PostDetail = (props: IProps) => {
             </TouchableOpacity>
           </View>
         )}
-        {/* text input section for comment */}
+        {/* users tagging list */}
+        {groupTags && isUserTagging ? (
+          <View
+            style={[
+              {
+                borderTopRightRadius: 10,
+                borderTopLeftRadius: 10,
+                width: '100%',
+                position: 'relative',
+                backgroundColor: 'white',
+                borderColor: '#000',
+                overflow: 'hidden',
+                paddingBottom: replyOnComment.textInputFocus
+                  ? Layout.normalize(74)
+                  : Layout.normalize(44),
+              },
+              {
+                backgroundColor: '#fff',
+                height: userTaggingListHeight,
+              },
+            ]}>
+            <FlashList
+              data={[...groupTags]}
+              renderItem={({item, index}: any) => {
+                let description = item?.description;
+                let imageUrl = item?.image_url;
+                return (
+                  <Pressable
+                    onPress={() => {
+                      let uuid = item?.sdk_client_info?.uuid;
+                      const res = replaceLastMention(
+                        commentToAdd,
+                        taggedUserName,
+                        item?.name,
+                        uuid ? `user_profile/${uuid}` : uuid,
+                      );
+                      setCommentToAdd(res);
+                      // setFormattedConversation(res);
+                      // setUserTaggingList([]);
+                      setGroupTags([]);
+                      setIsUserTagging(false);
+                    }}
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      paddingHorizontal: 10,
+                      paddingVertical: 5,
+                      borderBottomColor: '#e0e0e0',
+                      borderBottomWidth: 1,
+                    }}>
+                    <LMProfilePicture
+                      fallbackText={item?.name}
+                      fallbackTextBoxStyle={{
+                        borderRadius: 50,
+                        marginRight: 10,
+                      }}
+                      size={40}
+                    />
+
+                    <View
+                      style={[
+                        {
+                          flex: 1,
+                          paddingVertical: 15,
+                          borderBottomColor: 'grey',
+                        },
+                        {
+                          borderBottomWidth: 0.2,
+                          gap: Platform.OS === 'ios' ? 5 : 0,
+                        },
+                      ]}>
+                      <Text
+                        style={[{fontSize: 14, color: '#000'}]}
+                        numberOfLines={1}>
+                        {item?.name}
+                      </Text>
+                      {!!description ? (
+                        <Text
+                          style={[
+                            {fontSize: 16, color: 'gray'},
+                            {
+                              color: 'yellow',
+                            },
+                          ]}
+                          numberOfLines={1}>
+                          {description}
+                        </Text>
+                      ) : null}
+                    </View>
+                  </Pressable>
+                );
+              }}
+              extraData={{
+                value: [commentToAdd, groupTags],
+              }}
+              estimatedItemSize={15}
+              keyboardShouldPersistTaps={'handled'}
+              onEndReached={handleLoadMore}
+              onEndReachedThreshold={1}
+              bounces={false}
+              ListFooterComponent={renderFooter}
+              keyExtractor={(item: any, index) => {
+                return index?.toString();
+              }}
+            />
+          </View>
+        ) : null}
+        {/* input field */}
         <LMInputText
+          inputText={commentToAdd}
+          onType={handleInputChange}
           inputTextStyle={styles.textInputStyle}
           autoFocus={
             props.route.params[1] === NAVIGATED_FROM_COMMENT
@@ -685,9 +939,8 @@ const PostDetail = (props: IProps) => {
           }
           placeholderText="Write a comment"
           placeholderTextColor="#9B9B9B"
-          inputText={commentToAdd}
           disabled={postDetail?.id ? false : true}
-          onType={val => setCommentToAdd(val)}
+          inputRef={myRef}
           rightIcon={{
             onTap: () => {
               commentToAdd
@@ -705,6 +958,15 @@ const PostDetail = (props: IProps) => {
             },
             isClickable: commentToAdd ? false : true,
           }}
+          numberOfLines={6}
+          partTypes={[
+            {
+              trigger: '@', // Should be a single character like '@' or '#'
+              textStyle: {
+                color: 'blue',
+              }, // The mention style in the input
+            },
+          ]}
         />
       </KeyboardAvoidingView>
 
