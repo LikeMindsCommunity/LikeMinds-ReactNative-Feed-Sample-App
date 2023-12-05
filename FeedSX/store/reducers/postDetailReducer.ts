@@ -19,6 +19,7 @@ import {
   PIN_POST_STATE,
   PIN_POST_SUCCESS,
   POST_COMMENTS_SUCCESS,
+  POST_DATA_REFRESH_SUCCESS,
   POST_DATA_SUCCESS,
 } from '../types/types';
 
@@ -340,6 +341,12 @@ export function postDetailReducer(state = initialState, action: any) {
         }
       }
       return {...state};
+    }
+    case POST_DATA_REFRESH_SUCCESS: {
+      const {post = {}, users = {}} = action.body;
+      // model converter function
+      const converterPostData = convertToLMPostUI(post, users);
+      return {...state, postDetail: converterPostData};
     }
     default:
       return state;
