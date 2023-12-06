@@ -81,10 +81,7 @@ import {
   LIKES_LIST,
   POST_DETAIL,
 } from '../../constants/screenNames';
-import {
-  mentionToRouteConverter,
-  uploadFilesToAWS,
-} from '../../utils';
+import {mentionToRouteConverter, uploadFilesToAWS} from '../../utils';
 import STYLES from '../../constants/Styles';
 import {showToastMessage} from '../../store/actions/toast';
 import {clearPostDetail} from '../../store/actions/postDetail';
