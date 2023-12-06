@@ -413,7 +413,7 @@ const CreatePost = (props: IProps) => {
   };
 
   // this function is called on change text of inputText
-  const handleInputChange = async (event: any) => {
+  const handleInputChange = async (event: string) => {
     setPostContentText(event);
 
     const newMentions = detectMentions(event);

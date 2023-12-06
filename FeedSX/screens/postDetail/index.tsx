@@ -562,7 +562,7 @@ const PostDetail = (props: IProps) => {
   };
 
   // this function is called on change text of textInput
-  const handleInputChange = async (event: any) => {
+  const handleInputChange = async (event: string) => {
     setCommentToAdd(event);
 
     const newMentions = detectMentions(event);
