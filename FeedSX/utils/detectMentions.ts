@@ -21,7 +21,7 @@ export function detectMentions(input: string) {
      2. if input only contains '@'
      3. if '@' occurs at new line
      4. doesExists checks whether '@' has been typed between two strings
-     If any of the above condition is true, it pushes it in the matches list which indicates that member list has to be shown 
+     If any of the above condition is true, it pushes it in the matches list which indicates that member list has to be shown
     */
 
   if (

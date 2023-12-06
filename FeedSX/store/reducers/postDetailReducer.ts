@@ -349,12 +349,6 @@ export function postDetailReducer(state = initialState, action: any) {
       }
       return {...state};
     }
-    case POST_DATA_REFRESH_SUCCESS: {
-      const {post = {}, users = {}} = action.body;
-      // model converter function
-      const converterPostData = convertToLMPostUI(post, users);
-      return {...state, postDetail: converterPostData};
-    }
     case EDIT_POST_SUCCESS: {
       const {post = {}, users = {}} = action.body;
       const converterPostData = convertToLMPostUI(post, users);

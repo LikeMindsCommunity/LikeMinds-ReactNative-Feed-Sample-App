@@ -294,7 +294,7 @@ const PostDetail = (props: IProps) => {
       const convertedComment = convertToMentionValues(
         `${commentDetail?.text} `, // to put extra space after a message whwn we want to edit a message
         ({URLwithID, name}) => {
-          if (!!!URLwithID) {
+          if (!URLwithID) {
             return `@[${name}](${name})`;
           } else {
             return `@[${name}](${URLwithID})`;
@@ -398,7 +398,7 @@ const PostDetail = (props: IProps) => {
       commentToAdd,
       ({id, name}) => {
         const PATH = extractPathfromRouteQuery(id);
-        if (!!!PATH) {
+        if (!PATH) {
           return `<<${name}|route://${name}>>`;
         } else {
           return `<<${name}|route://${id}>>`;
@@ -434,7 +434,7 @@ const PostDetail = (props: IProps) => {
       commentToAdd,
       ({id, name}) => {
         const PATH = extractPathfromRouteQuery(id);
-        if (!!!PATH) {
+        if (!PATH) {
           return `<<${name}|route://${name}>>`;
         } else {
           return `<<${name}|route://${id}>>`;
@@ -565,7 +565,7 @@ const PostDetail = (props: IProps) => {
       commentToAdd,
       ({id, name}) => {
         const PATH = extractPathfromRouteQuery(id);
-        if (!!!PATH) {
+        if (!PATH) {
           return `<<${name}|route://${name}>>`;
         } else {
           return `<<${name}|route://${id}>>`;
@@ -656,8 +656,8 @@ const PostDetail = (props: IProps) => {
           .build(),
       ) as any,
     );
-    if (!!taggingListResponse) {
-      setAllTags([...allTags, ...taggingListResponse?.members]);
+    if (taggingListResponse) {
+      setAllTags([...allTags, ...taggingListResponse.members]);
       setIsLoading(false);
     }
   };

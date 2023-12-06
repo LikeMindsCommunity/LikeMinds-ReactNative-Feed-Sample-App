@@ -176,7 +176,7 @@ const UniversalFeed = () => {
     // replace the mentions with route
     const postContentText = replaceMentionValues(postContent, ({id, name}) => {
       const PATH = extractPathfromRouteQuery(id);
-      if (!!!PATH) {
+      if (!PATH) {
         return `<<${name}|route://${name}>>`;
       } else {
         return `<<${name}|route://${id}>>`;

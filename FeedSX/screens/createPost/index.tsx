@@ -366,7 +366,7 @@ const CreatePost = (props: IProps) => {
       const convertedText = convertToMentionValues(
         `${postDetail?.text} `, // to put extra space after a message whwn we want to edit a message
         ({URLwithID, name}) => {
-          if (!!!URLwithID) {
+          if (!URLwithID) {
             return `@[${name}](${name})`;
           } else {
             return `@[${name}](${URLwithID})`;
@@ -403,7 +403,7 @@ const CreatePost = (props: IProps) => {
     const contentText = replaceMentionValues(postContentText, ({id, name}) => {
       // example ID = `user_profile/8619d45e-9c4c-4730-af8e-4099fe3dcc4b`
       const PATH = extractPathfromRouteQuery(id);
-      if (!!!PATH) {
+      if (!PATH) {
         return `<<${name}|route://${name}>>`;
       } else {
         return `<<${name}|route://${id}>>`;
@@ -440,7 +440,7 @@ const CreatePost = (props: IProps) => {
     // debouncing logic
     clearTimeout(debounceTimeout);
 
-    let mentionListLength = newMentions.length;
+    const mentionListLength = newMentions.length;
     if (mentionListLength > 0) {
       const timeoutID = setTimeout(async () => {
         setPage(1);
@@ -489,8 +489,8 @@ const CreatePost = (props: IProps) => {
           .build(),
       ) as any,
     );
-    if (!!taggingListResponse) {
-      setAllTags([...allTags, ...taggingListResponse?.members]);
+    if (taggingListResponse) {
+      setAllTags([...allTags, ...taggingListResponse.members]);
       setIsLoading(false);
     }
   };
