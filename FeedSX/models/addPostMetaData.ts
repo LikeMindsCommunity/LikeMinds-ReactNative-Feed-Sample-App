@@ -18,3 +18,13 @@ export interface DocumentMetaData {
   type: string;
   uri: string;
 }
+// props interface on navigation
+export interface NavigationProps {
+  navigation: object;
+  route: {
+    key: string;
+    name: string;
+    params: Array<string>;
+    path: undefined;
+  };
+}

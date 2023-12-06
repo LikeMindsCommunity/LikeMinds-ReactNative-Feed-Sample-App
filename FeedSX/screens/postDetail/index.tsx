@@ -19,6 +19,7 @@ import {
   LMHeader,
   LMInputText,
   LMPost,
+  LMPostUI,
   LMProfilePicture,
 } from '../../../LikeMinds-ReactNative-Feed-UI';
 import {useDispatch} from 'react-redux';
@@ -50,7 +51,11 @@ import {
 } from '@likeminds.community/feed-js-beta';
 import {useAppSelector} from '../../store/store';
 import {NavigationService} from '../../navigation';
-import {LIKES_LIST, UNIVERSAL_FEED} from '../../constants/screenNames';
+import {
+  CREATE_POST,
+  LIKES_LIST,
+  UNIVERSAL_FEED,
+} from '../../constants/screenNames';
 import {postLikesClear} from '../../store/actions/postLikes';
 import {
   likePost,
@@ -66,6 +71,7 @@ import {
   COMMENT_TYPE,
   DELETE_COMMENT_MENU_ITEM,
   DELETE_POST_MENU_ITEM,
+  EDIT_POST_MENU_ITEM,
   NAVIGATED_FROM_COMMENT,
   PIN_POST_MENU_ITEM,
   POST_LIKES,
@@ -91,18 +97,9 @@ import {
   replaceMentionValues,
 } from '../../utils';
 import {convertToMentionValues} from '../../../LikeMinds-ReactNative-Feed-UI/src/base/LMInputText/utils';
+import {NavigationProps} from '../../models/addPostMetaData';
 
-interface IProps {
-  navigation: object;
-  route: {
-    key: string;
-    name: string;
-    params: Array<string>;
-    path: undefined;
-  };
-}
-
-const PostDetail = (props: IProps) => {
+const PostDetail = (props: NavigationProps) => {
   const dispatch = useDispatch();
   const modalPosition = {x: 0, y: 0};
   const [showActionListModal, setShowActionListModal] = useState(false);
@@ -135,7 +132,7 @@ const PostDetail = (props: IProps) => {
   const [debounceTimeout, setDebounceTimeout] = useState<any>(null);
   const [page, setPage] = useState(1);
   const [userTaggingListHeight, setUserTaggingListHeight] = useState<any>(116);
-  const [groupTags, setGroupTags] = useState<any>([]);
+  const [allTags, setAllTags] = useState<any>([]);
   const [isUserTagging, setIsUserTagging] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -254,6 +251,9 @@ const PostDetail = (props: IProps) => {
     if (itemId === DELETE_POST_MENU_ITEM) {
       handleDeletePost(true);
     }
+    if (itemId === EDIT_POST_MENU_ITEM) {
+      NavigationService.navigate(CREATE_POST, postId);
+    }
   };
 
   // this function handles the functionality on the report option of comment
@@ -281,11 +281,8 @@ const PostDetail = (props: IProps) => {
     }
     if (itemId === 8) {
       const commentDetail = getCommentDetail(postDetail?.replies, commentId);
-      // setCommentToAdd(commentDetail?.text ? commentDetail.text : '');
-      // setTimeout(() => {
-      //   setEditCommentFocus(true);
-      // }, 100);
-      let convertedText = convertToMentionValues(
+      // converts the mentions route to mention values
+      let convertedComment = convertToMentionValues(
         `${commentDetail?.text} `, // to put extra space after a message whwn we want to edit a message
         ({URLwithID, name}) => {
           if (!!!URLwithID) {
@@ -295,7 +292,10 @@ const PostDetail = (props: IProps) => {
           }
         },
       );
-      setCommentToAdd(convertedText);
+      setCommentToAdd(convertedComment);
+      setTimeout(() => {
+        setEditCommentFocus(true);
+      }, 100);
     }
   };
 
@@ -384,23 +384,28 @@ const PostDetail = (props: IProps) => {
 
   // this functions calls the add new comment api
   const addNewComment = async (postId: string) => {
-    let conversationText = replaceMentionValues(commentToAdd, ({id, name}) => {
-      // example ID = `user_profile/8619d45e-9c4c-4730-af8e-4099fe3dcc4b`
-      let PATH = extractPathfromRouteQuery(id);
-      if (!!!PATH) {
-        return `<<${name}|route://${name}>>`;
-      } else {
-        return `<<${name}|route://${id}>>`;
-      }
-    });
+    // convert the mentions to route
+    let convertedNewComment = replaceMentionValues(
+      commentToAdd,
+      ({id, name}) => {
+        let PATH = extractPathfromRouteQuery(id);
+        if (!!!PATH) {
+          return `<<${name}|route://${name}>>`;
+        } else {
+          return `<<${name}|route://${id}>>`;
+        }
+      },
+    );
     const currentDate = new Date();
     const payload = {
       postId: postId,
-      newComment: conversationText,
+      newComment: convertedNewComment,
       tempId: -currentDate.getTime(),
     };
     setCommentToAdd('');
+    // handles adding comment locally
     dispatch(addCommentStateHandler({payload, loggedInUser}) as any);
+    // calls new comment api
     const commentAddResponse = await dispatch(
       addComment(
         AddCommentRequest.builder()
@@ -415,8 +420,8 @@ const PostDetail = (props: IProps) => {
 
   // this functions calls the add new reply to a comment api
   const addNewReply = async (postId: string, commentId: string) => {
-    let conversationText = replaceMentionValues(commentToAdd, ({id, name}) => {
-      // example ID = `user_profile/8619d45e-9c4c-4730-af8e-4099fe3dcc4b`
+    // convert the mentions to route
+    let convertedNewReply = replaceMentionValues(commentToAdd, ({id, name}) => {
       let PATH = extractPathfromRouteQuery(id);
       if (!!!PATH) {
         return `<<${name}|route://${name}>>`;
@@ -427,12 +432,13 @@ const PostDetail = (props: IProps) => {
     const currentDate = new Date();
     const payload = {
       postId: postId,
-      newComment: conversationText,
+      newComment: convertedNewReply,
       tempId: -currentDate.getTime(),
       commentId: commentId,
     };
     setCommentToAdd('');
     dispatch(replyCommentStateHandler({payload, loggedInUser}) as any);
+    // call reply on comment api
     const replyAddResponse = await dispatch(
       replyComment(
         ReplyCommentRequest.builder()
@@ -542,20 +548,24 @@ const PostDetail = (props: IProps) => {
 
   // this function calls the edit comment api
   const commentEdit = async () => {
-    let conversationText = replaceMentionValues(commentToAdd, ({id, name}) => {
-      // example ID = `user_profile/8619d45e-9c4c-4730-af8e-4099fe3dcc4b`
-      let PATH = extractPathfromRouteQuery(id);
-      if (!!!PATH) {
-        return `<<${name}|route://${name}>>`;
-      } else {
-        return `<<${name}|route://${id}>>`;
-      }
-    });
+    // convert the mentions to route
+    let convertedEditedComment = replaceMentionValues(
+      commentToAdd,
+      ({id, name}) => {
+        let PATH = extractPathfromRouteQuery(id);
+        if (!!!PATH) {
+          return `<<${name}|route://${name}>>`;
+        } else {
+          return `<<${name}|route://${id}>>`;
+        }
+      },
+    );
     const payload = {
       commentId: selectedMenuItemCommentId,
-      commentText: conversationText,
+      commentText: convertedEditedComment,
     };
     await dispatch(editCommentStateHandler(payload) as any);
+    // call edit comment api
     const editCommentResponse = await dispatch(
       editComment(
         EditCommentRequest.builder()
@@ -572,10 +582,11 @@ const PostDetail = (props: IProps) => {
     return editCommentResponse;
   };
 
-  const handleInputChange = async (e: any) => {
-    setCommentToAdd(e);
+  // this function is called on change text of textInput
+  const handleInputChange = async (event: any) => {
+    setCommentToAdd(event);
 
-    const newMentions = detectMentions(e);
+    const newMentions = detectMentions(event);
 
     if (newMentions.length > 0) {
       const length = newMentions.length;
@@ -585,29 +596,29 @@ const PostDetail = (props: IProps) => {
     // debouncing logic
     clearTimeout(debounceTimeout);
 
-    let len = newMentions.length;
-    if (len > 0) {
+    let mentionListLength = newMentions.length;
+    if (mentionListLength > 0) {
       const timeoutID = setTimeout(async () => {
         setPage(1);
-        const res = await dispatch(
+        const taggingListResponse = await dispatch(
           getTaggingList(
             GetTaggingListRequest.builder()
-              .setsearchName(newMentions[len - 1])
+              .setsearchName(newMentions[mentionListLength - 1])
               .setpage(1)
               .setpageSize(10)
               .build(),
           ) as any,
         );
-        if (len > 0) {
-          let groupTagsLength = res?.members?.length;
-          let arrLength = groupTagsLength;
+        if (mentionListLength > 0) {
+          let tagsLength = taggingListResponse?.members?.length;
+          let arrLength = tagsLength;
           if (arrLength >= 5) {
             setUserTaggingListHeight(5 * 58);
           } else if (arrLength < 5) {
-            let height = groupTagsLength * 100;
+            let height = tagsLength * 100;
             setUserTaggingListHeight(height);
           }
-          setGroupTags(res?.members);
+          setAllTags(taggingListResponse?.members);
           setIsUserTagging(true);
         }
       }, 500);
@@ -615,15 +626,16 @@ const PostDetail = (props: IProps) => {
       setDebounceTimeout(timeoutID);
     } else {
       if (isUserTagging) {
-        setGroupTags([]);
+        setAllTags([]);
         setIsUserTagging(false);
       }
     }
   };
 
+  // this calls the tagging list api for different page number
   const loadData = async (newPage: number) => {
     setIsLoading(true);
-    const res = await dispatch(
+    const taggingListResponse = await dispatch(
       getTaggingList(
         GetTaggingListRequest.builder()
           .setsearchName(taggedUserName)
@@ -632,14 +644,15 @@ const PostDetail = (props: IProps) => {
           .build(),
       ) as any,
     );
-    if (!!res) {
-      setGroupTags([...groupTags, ...res?.members]);
+    if (!!taggingListResponse) {
+      setAllTags([...allTags, ...taggingListResponse?.members]);
       setIsLoading(false);
     }
   };
 
+  // this handles the pagination of tagging list
   const handleLoadMore = () => {
-    let userTaggingListLength = groupTags.length;
+    let userTaggingListLength = allTags.length;
     if (!isLoading && userTaggingListLength > 0) {
       // checking if conversations length is greater the 15 as it convered all the screen sizes of mobiles, and pagination API will never call if screen is not full messages.
       if (userTaggingListLength >= 10 * page) {
@@ -648,14 +661,6 @@ const PostDetail = (props: IProps) => {
         loadData(newPage);
       }
     }
-  };
-
-  const renderFooter = () => {
-    return isLoading ? (
-      <View style={{paddingVertical: 20}}>
-        <LMLoader size={15} />
-      </View>
-    ) : null;
   };
 
   return (
@@ -694,7 +699,7 @@ const PostDetail = (props: IProps) => {
               styles.mainContainer,
               {
                 paddingBottom:
-                  groupTags && isUserTagging
+                  allTags && isUserTagging
                     ? 0
                     : replyOnComment.textInputFocus
                     ? Layout.normalize(74)
@@ -706,10 +711,13 @@ const PostDetail = (props: IProps) => {
               {postDetail?.commentsCount > 0 ? (
                 <View>
                   <FlatList
-                  refreshing={refreshing}
-                  refreshControl={
-                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-                  }
+                    refreshing={refreshing}
+                    refreshControl={
+                      <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                      />
+                    }
                     keyboardShouldPersistTaps={'handled'}
                     ListHeaderComponent={
                       // this renders the post section
@@ -818,9 +826,7 @@ const PostDetail = (props: IProps) => {
             </>
           </View>
         ) : (
-          <View style={styles.loaderView}>
-            {!localRefresh && <LMLoader />}
-          </View>
+          <View style={styles.loaderView}>{!localRefresh && <LMLoader />}</View>
         )}
         {/* replying to username view which renders when the user is adding a reply to a comment */}
         {replyOnComment.textInputFocus && (
@@ -844,7 +850,7 @@ const PostDetail = (props: IProps) => {
           </View>
         )}
         {/* users tagging list */}
-        {groupTags && isUserTagging ? (
+        {allTags && isUserTagging ? (
           <View
             style={[
               {
@@ -852,8 +858,6 @@ const PostDetail = (props: IProps) => {
                 borderTopLeftRadius: 10,
                 width: '100%',
                 position: 'relative',
-                backgroundColor: 'white',
-                borderColor: '#000',
                 overflow: 'hidden',
                 paddingBottom: replyOnComment.textInputFocus
                   ? Layout.normalize(74)
@@ -865,10 +869,8 @@ const PostDetail = (props: IProps) => {
               },
             ]}>
             <FlashList
-              data={[...groupTags]}
+              data={[...allTags]}
               renderItem={({item, index}: any) => {
-                let description = item?.description;
-                let imageUrl = item?.image_url;
                 return (
                   <Pressable
                     onPress={() => {
@@ -880,9 +882,7 @@ const PostDetail = (props: IProps) => {
                         uuid ? `user_profile/${uuid}` : uuid,
                       );
                       setCommentToAdd(res);
-                      // setFormattedConversation(res);
-                      // setUserTaggingList([]);
-                      setGroupTags([]);
+                      setAllTags([]);
                       setIsUserTagging(false);
                     }}
                     style={{
@@ -908,10 +908,8 @@ const PostDetail = (props: IProps) => {
                         {
                           flex: 1,
                           paddingVertical: 15,
-                          borderBottomColor: 'grey',
                         },
                         {
-                          borderBottomWidth: 0.2,
                           gap: Platform.OS === 'ios' ? 5 : 0,
                         },
                       ]}>
@@ -920,37 +918,32 @@ const PostDetail = (props: IProps) => {
                         numberOfLines={1}>
                         {item?.name}
                       </Text>
-                      {!!description ? (
-                        <Text
-                          style={[
-                            {fontSize: 16, color: 'gray'},
-                            {
-                              color: 'yellow',
-                            },
-                          ]}
-                          numberOfLines={1}>
-                          {description}
-                        </Text>
-                      ) : null}
                     </View>
                   </Pressable>
                 );
               }}
               extraData={{
-                value: [commentToAdd, groupTags],
+                value: [commentToAdd, allTags],
               }}
-              estimatedItemSize={15}
+              estimatedItemSize={75}
               keyboardShouldPersistTaps={'handled'}
               onEndReached={handleLoadMore}
               onEndReachedThreshold={1}
               bounces={false}
-              ListFooterComponent={renderFooter}
+              ListFooterComponent={
+                isLoading ? (
+                  <View style={{paddingVertical: 20}}>
+                    <LMLoader size={15} />
+                  </View>
+                ) : null
+              }
               keyExtractor={(item: any, index) => {
                 return index?.toString();
               }}
             />
           </View>
         ) : null}
+
         {/* input field */}
         <LMInputText
           inputText={commentToAdd}

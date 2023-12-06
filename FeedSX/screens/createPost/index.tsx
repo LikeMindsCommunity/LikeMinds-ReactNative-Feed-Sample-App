@@ -68,7 +68,6 @@ import {
 } from '../../store/actions/createPost';
 import {useDispatch} from 'react-redux';
 import {NavigationService} from '../../navigation';
-import {UNIVERSAL_FEED} from '../../constants/screenNames';
 import {
   convertImageVideoMetaData,
   convertDocumentMetaData,
@@ -80,6 +79,7 @@ import {showToastMessage} from '../../store/actions/toast';
 import LMLoader from '../../../LikeMinds-ReactNative-Feed-UI/src/base/LMLoader';
 import {getPost, getTaggingList} from '../../store/actions/postDetail';
 import {FlashList} from '@shopify/flash-list';
+import {convertToMentionValues} from '../../../LikeMinds-ReactNative-Feed-UI/src/base/LMInputText/utils';
 
 const CreatePost = (props: any) => {
   const memberData = useAppSelector(state => state.feed.member);
@@ -104,7 +104,7 @@ const CreatePost = (props: any) => {
   const [debounceTimeout, setDebounceTimeout] = useState<any>(null);
   const [page, setPage] = useState(1);
   const [userTaggingListHeight, setUserTaggingListHeight] = useState<any>(116);
-  const [groupTags, setGroupTags] = useState<any>([]);
+  const [allTags, setAllTags] = useState<any>([]);
   const [isUserTagging, setIsUserTagging] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -353,7 +353,18 @@ const CreatePost = (props: any) => {
   // this sets the post data in the local state to render UI
   useEffect(() => {
     if (postDetail?.text) {
-      setPostContentText(postDetail?.text);
+      let convertedText = convertToMentionValues(
+        `${postDetail?.text} `, // to put extra space after a message whwn we want to edit a message
+        ({URLwithID, name}) => {
+          if (!!!URLwithID) {
+            return `@[${name}](${name})`;
+          } else {
+            return `@[${name}](${URLwithID})`;
+          }
+        },
+      );
+      setPostContentText(convertedText);
+      // setPostContentText(postDetail?.text);
     }
     if (postDetail?.attachments) {
       const imageVideoMedia = [];
@@ -378,25 +389,24 @@ const CreatePost = (props: any) => {
 
   //  this function calls the edit post api
   const postEdit = async () => {
-    let conversationText = replaceMentionValues(
-      postContentText,
-      ({id, name}) => {
-        // example ID = `user_profile/8619d45e-9c4c-4730-af8e-4099fe3dcc4b`
-        let PATH = extractPathfromRouteQuery(id);
-        if (!!!PATH) {
-          return `<<${name}|route://${name}>>`;
-        } else {
-          return `<<${name}|route://${id}>>`;
-        }
-      },
-    );
+    // replace mentions with route
+    let contentText = replaceMentionValues(postContentText, ({id, name}) => {
+      // example ID = `user_profile/8619d45e-9c4c-4730-af8e-4099fe3dcc4b`
+      let PATH = extractPathfromRouteQuery(id);
+      if (!!!PATH) {
+        return `<<${name}|route://${name}>>`;
+      } else {
+        return `<<${name}|route://${id}>>`;
+      }
+    });
+    // call edit post api
     const editPostResponse = dispatch(
       editPost(
         EditPostRequest.builder()
           .setHeading('')
           .setattachments([...allAttachment, ...formattedLinkAttachments])
           .setpostId(postDetail?.id)
-          .settext(conversationText)
+          .settext(contentText)
           .build(),
       ) as any,
     );
@@ -406,10 +416,11 @@ const CreatePost = (props: any) => {
     return editPostResponse;
   };
 
-  const handleInputChange = async (e: any) => {
-    setPostContentText(e);
+  // this function is called on change text of inputText
+  const handleInputChange = async (event: any) => {
+    setPostContentText(event);
 
-    const newMentions = detectMentions(e);
+    const newMentions = detectMentions(event);
 
     if (newMentions.length > 0) {
       const length = newMentions.length;
@@ -419,30 +430,30 @@ const CreatePost = (props: any) => {
     // debouncing logic
     clearTimeout(debounceTimeout);
 
-    let len = newMentions.length;
-    if (len > 0) {
+    let mentionListLength = newMentions.length;
+    if (mentionListLength > 0) {
       const timeoutID = setTimeout(async () => {
         setPage(1);
-        const res = await dispatch(
+        const taggingListResponse = await dispatch(
           getTaggingList(
             GetTaggingListRequest.builder()
-              .setsearchName(newMentions[len - 1])
+              .setsearchName(newMentions[mentionListLength - 1])
               .setpage(1)
               .setpageSize(10)
               .build(),
           ) as any,
         );
 
-        if (len > 0) {
-          let groupTagsLength = res?.members?.length;
-          let arrLength = groupTagsLength;
+        if (mentionListLength > 0) {
+          let tagsLength = taggingListResponse?.members?.length;
+          let arrLength = tagsLength;
           if (arrLength >= 5) {
             setUserTaggingListHeight(5 * 58);
           } else if (arrLength < 5) {
-            let height = groupTagsLength * 100;
+            let height = tagsLength * 100;
             setUserTaggingListHeight(height);
           }
-          setGroupTags(res?.members);
+          setAllTags(taggingListResponse?.members);
           setIsUserTagging(true);
         }
       }, 500);
@@ -450,15 +461,16 @@ const CreatePost = (props: any) => {
       setDebounceTimeout(timeoutID);
     } else {
       if (isUserTagging) {
-        setGroupTags([]);
+        setAllTags([]);
         setIsUserTagging(false);
       }
     }
   };
 
+  // this calls the tagging list api for different page number
   const loadData = async (newPage: number) => {
     setIsLoading(true);
-    const res = await dispatch(
+    const taggingListResponse = await dispatch(
       getTaggingList(
         GetTaggingListRequest.builder()
           .setsearchName(taggedUserName)
@@ -467,14 +479,15 @@ const CreatePost = (props: any) => {
           .build(),
       ) as any,
     );
-    if (!!res) {
-      setGroupTags([...groupTags, ...res?.members]);
+    if (!!taggingListResponse) {
+      setAllTags([...allTags, ...taggingListResponse?.members]);
       setIsLoading(false);
     }
   };
 
+  // this handles the pagination of tagging list
   const handleLoadMore = () => {
-    let userTaggingListLength = groupTags.length;
+    let userTaggingListLength = allTags.length;
     if (!isLoading && userTaggingListLength > 0) {
       // checking if conversations length is greater the 15 as it convered all the screen sizes of mobiles, and pagination API will never call if screen is not full messages.
       if (userTaggingListLength >= 10 * page) {
@@ -483,14 +496,6 @@ const CreatePost = (props: any) => {
         loadData(newPage);
       }
     }
-  };
-
-  const renderFooter = () => {
-    return isLoading ? (
-      <View style={{paddingVertical: 20}}>
-        <LMLoader size={15} />
-      </View>
-    ) : null;
   };
 
   // this renders the post detail UI
@@ -535,7 +540,7 @@ const CreatePost = (props: any) => {
         />
 
         {/* users tagging list */}
-        {groupTags && isUserTagging ? (
+        {allTags && isUserTagging ? (
           <View
             style={[
               {
@@ -546,9 +551,6 @@ const CreatePost = (props: any) => {
                 backgroundColor: 'white',
                 borderColor: '#000',
                 overflow: 'hidden',
-                // paddingBottom: replyOnComment.textInputFocus
-                // ? Layout.normalize(74)
-                // : Layout.normalize(44),
               },
               {
                 backgroundColor: '#fff',
@@ -556,7 +558,7 @@ const CreatePost = (props: any) => {
               },
             ]}>
             <FlashList
-              data={[...groupTags]}
+              data={[...allTags]}
               renderItem={({item, index}: any) => {
                 return (
                   <Pressable
@@ -569,7 +571,7 @@ const CreatePost = (props: any) => {
                         uuid ? `user_profile/${uuid}` : uuid,
                       );
                       setPostContentText(res);
-                      setGroupTags([]);
+                      setAllTags([]);
                       setIsUserTagging(false);
                     }}
                     style={{
@@ -595,10 +597,8 @@ const CreatePost = (props: any) => {
                         {
                           flex: 1,
                           paddingVertical: 15,
-                          borderBottomColor: 'grey',
                         },
                         {
-                          borderBottomWidth: 0.2,
                           gap: Platform.OS === 'ios' ? 5 : 0,
                         },
                       ]}>
@@ -612,14 +612,20 @@ const CreatePost = (props: any) => {
                 );
               }}
               extraData={{
-                value: [postContentText, groupTags],
+                value: [postContentText, allTags],
               }}
-              estimatedItemSize={15}
+              estimatedItemSize={75}
               keyboardShouldPersistTaps={'handled'}
               onEndReached={handleLoadMore}
               onEndReachedThreshold={1}
               bounces={false}
-              ListFooterComponent={renderFooter}
+              ListFooterComponent={
+                isLoading ? (
+                  <View style={{paddingVertical: 20}}>
+                    <LMLoader size={15} />
+                  </View>
+                ) : null
+              }
               keyExtractor={(item: any, index) => {
                 return index?.toString();
               }}
@@ -727,7 +733,7 @@ const CreatePost = (props: any) => {
       {/* screen header section*/}
       <LMHeader
         showBackArrow
-        onBackPress={() => NavigationService.navigate(UNIVERSAL_FEED)}
+        onBackPress={() => NavigationService.goBack()}
         heading={postToEdit ? 'Edit Post' : 'Create a Post'}
         rightComponent={
           // post button section

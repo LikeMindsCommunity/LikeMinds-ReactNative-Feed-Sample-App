@@ -173,8 +173,8 @@ const UniversalFeed = () => {
 
   // this function adds a new post
   const postAdd = useCallback(async () => {
-    let conversationText = replaceMentionValues(postContent, ({id, name}) => {
-      // example ID = `user_profile/8619d45e-9c4c-4730-af8e-4099fe3dcc4b`
+    // replace the mentions with route
+    let postContentText = replaceMentionValues(postContent, ({id, name}) => {
       let PATH = extractPathfromRouteQuery(id);
       if (!!!PATH) {
         return `<<${name}|route://${name}>>`;
@@ -182,6 +182,7 @@ const UniversalFeed = () => {
         return `<<${name}|route://${id}>>`;
       }
     });
+    // upload media to aws
     const uploadPromises = mediaAttachmemnts?.map(
       async (item: LMAttachmentUI) => {
         return uploadFilesToAWS(
@@ -199,7 +200,7 @@ const UniversalFeed = () => {
       addPost(
         AddPostRequest.builder()
           .setAttachments([...updatedAttachments, ...linkAttachments])
-          .setText(conversationText)
+          .setText(postContentText)
           .build(),
       ) as any,
     );

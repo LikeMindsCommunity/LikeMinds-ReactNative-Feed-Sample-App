@@ -1,6 +1,7 @@
 import {MentionData} from '../../LikeMinds-ReactNative-Feed-UI';
 
 const mentionRegEx = /((.)\[([^[]*)]\(([^(^)]*)\))/gi;
+// this function gives mention values from the route path
 export const replaceMentionValues = (
   value: string,
   replacer: (mention: MentionData) => string,

@@ -16,6 +16,7 @@ import {
   CREATE_REPLY_SUCCESS,
   DELETE_COMMENT_STATE,
   EDIT_COMMENT_STATE,
+  EDIT_POST_SUCCESS,
   PIN_POST_STATE,
   PIN_POST_SUCCESS,
   POST_COMMENTS_SUCCESS,
@@ -351,6 +352,11 @@ export function postDetailReducer(state = initialState, action: any) {
     case POST_DATA_REFRESH_SUCCESS: {
       const {post = {}, users = {}} = action.body;
       // model converter function
+      const converterPostData = convertToLMPostUI(post, users);
+      return {...state, postDetail: converterPostData};
+    }
+    case EDIT_POST_SUCCESS: {
+      const {post = {}, users = {}} = action.body;
       const converterPostData = convertToLMPostUI(post, users);
       return {...state, postDetail: converterPostData};
     }

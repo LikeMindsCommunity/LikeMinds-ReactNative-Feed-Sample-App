@@ -1,3 +1,4 @@
+// this function replaces the text by mention on selecting a username from tagging list
 export function replaceLastMention(
   input: string,
   taggerUserName: string,
