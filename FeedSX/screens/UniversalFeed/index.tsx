@@ -1,7 +1,14 @@
-import React, {useCallback, useEffect, useLayoutEffect, useState} from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import {
   Image,
   Platform,
+  RefreshControl,
   SafeAreaView,
   Text,
   TouchableOpacity,
@@ -17,8 +24,8 @@ import {
 import {useDispatch} from 'react-redux';
 import {
   autoPlayPostVideo,
-  clearFeed,
   getFeed,
+  refreshFeed,
   getMemberState,
   initiateUser,
   likePost,
@@ -96,8 +103,12 @@ const UniversalFeed = () => {
   const memberRight = useAppSelector(state => state.feed.memberRights);
   const [postUploading, setPostUploading] = useState(false);
   const [showCreatePost, setShowCreatePost] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [localRefresh, setLocalRefresh] = useState(false);
+
   const uploadingMediaAttachmentType = mediaAttachmemnts[0]?.attachmentType;
   const uploadingMediaAttachment = mediaAttachmemnts[0]?.attachmentMeta.url;
+  const listRef = useRef<FlashList<LMPostUI>>(null);
 
   // this function calls initiate user API and sets the access token and community id
   const getInitialData = useCallback(async () => {
@@ -141,6 +152,20 @@ const UniversalFeed = () => {
     return getFeedResponse;
   }, [dispatch, feedPageNumber]);
 
+  // this function is executed on pull to refresh
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    setLocalRefresh(true);
+    // calling getFeed API
+    await dispatch(
+      refreshFeed(
+        GetFeedRequest.builder().setpage(1).setpageSize(20).build(),
+      ) as any,
+    );
+    setLocalRefresh(false);
+    setRefreshing(false);
+  }, [dispatch]);
+
   // this function adds a new post
   const postAdd = useCallback(async () => {
     const uploadPromises = mediaAttachmemnts?.map(
@@ -173,11 +198,8 @@ const UniversalFeed = () => {
           conText: '',
         }) as any,
       );
-      await dispatch(clearFeed() as any);
-      setFeedPageNumber(1);
-      if (feedPageNumber === 1) {
-        fetchFeed();
-      }
+      await onRefresh();
+      listRef.current?.scrollToIndex({animated: true, index: 0});
       dispatch(
         showToastMessage({
           isToast: true,
@@ -188,12 +210,11 @@ const UniversalFeed = () => {
     return addPostResponse;
   }, [
     dispatch,
-    feedPageNumber,
-    fetchFeed,
     linkAttachments,
     mediaAttachmemnts,
     memberData?.userUniqueId,
     postContent,
+    onRefresh,
   ]);
 
   // this useEffect handles the execution of addPost api
@@ -406,6 +427,11 @@ const UniversalFeed = () => {
       {/* posts list section */}
       {feedData?.length > 0 ? (
         <FlashList
+          ref={listRef}
+          refreshing={refreshing}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
           data={feedData}
           renderItem={({item}: {item: LMPostUI}) => (
             <TouchableOpacity
@@ -502,9 +528,7 @@ const UniversalFeed = () => {
           viewabilityConfig={{viewAreaCoveragePercentThreshold: 60}}
         />
       ) : (
-        <View style={styles.loaderView}>
-          <LMLoader />
-        </View>
+        <View style={styles.loaderView}>{!localRefresh && <LMLoader />}</View>
       )}
       {/* create post button section */}
       <TouchableOpacity

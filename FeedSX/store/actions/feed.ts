@@ -35,6 +35,7 @@ import {
   DELETE_POST_STATE,
   AUTO_PLAY_POST_VIDEO,
   CLEAR_FEED,
+  UNIVERSAL_FEED_REFRESH_SUCCESS,
 } from '../types/types';
 import {lmFeedClient} from '../../..';
 import {InitiateUserRequest} from '@likeminds.community/feed-js-beta';
@@ -90,6 +91,27 @@ export const getFeed = (payload?: any) => async (dispatch: Dispatch) => {
         types: [
           UNIVERSAL_FEED_DATA,
           UNIVERSAL_FEED_SUCCESS,
+          UNIVERSAL_FEED_FAILED,
+        ],
+        showLoader: true,
+      },
+    });
+  } catch (error) {
+    Alert.alert(`${error}`);
+  }
+};
+
+// refresh feed API action
+export const refreshFeed = (payload?: any) => async (dispatch: Dispatch) => {
+  try {
+    return await dispatch({
+      type: UNIVERSAL_FEED_REFRESH_SUCCESS,
+      [CALL_API]: {
+        func: lmFeedClient?.getFeed(payload),
+        body: payload,
+        types: [
+          UNIVERSAL_FEED_DATA,
+          UNIVERSAL_FEED_REFRESH_SUCCESS,
           UNIVERSAL_FEED_FAILED,
         ],
         showLoader: true,

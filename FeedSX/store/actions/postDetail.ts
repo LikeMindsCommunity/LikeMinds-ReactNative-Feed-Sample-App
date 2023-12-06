@@ -24,6 +24,9 @@ import {
   CREATE_REPLY,
   CREATE_REPLY_FAILED,
   CREATE_REPLY_STATE,
+  POST_DATA_REFRESH_SUCCESS,
+  POST_DATA_REFRESH,
+  POST_DATA_REFRESH_FAILED,
 } from '../types/types';
 import {CALL_API} from '../apiMiddleware';
 import {lmFeedClient} from '../../..';
@@ -192,6 +195,28 @@ export const deleteCommentStateHandler =
         body: payload,
       });
       return;
+    } catch (error) {
+      Alert.alert(`${error}`);
+    }
+  };
+
+// refresh post detail API action
+export const refreshPostDetail =
+  (payload?: any) => async (dispatch: Dispatch) => {
+    try {
+      return await dispatch({
+        type: POST_DATA_REFRESH_SUCCESS,
+        [CALL_API]: {
+          func: lmFeedClient?.getPost(payload),
+          body: payload,
+          types: [
+            POST_DATA_REFRESH,
+            POST_DATA_REFRESH_SUCCESS,
+            POST_DATA_REFRESH_FAILED,
+          ],
+          showLoader: true,
+        },
+      });
     } catch (error) {
       Alert.alert(`${error}`);
     }
