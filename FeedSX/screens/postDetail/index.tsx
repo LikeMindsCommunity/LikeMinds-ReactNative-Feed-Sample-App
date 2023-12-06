@@ -853,18 +853,11 @@ const PostDetail = (props: NavigationProps) => {
         {allTags && isUserTagging ? (
           <View
             style={[
+              styles.taggingListView,
               {
-                borderTopRightRadius: 10,
-                borderTopLeftRadius: 10,
-                width: '100%',
-                position: 'relative',
-                overflow: 'hidden',
                 paddingBottom: replyOnComment.textInputFocus
                   ? Layout.normalize(74)
                   : Layout.normalize(44),
-              },
-              {
-                backgroundColor: '#fff',
                 height: userTaggingListHeight,
               },
             ]}>
@@ -885,36 +878,17 @@ const PostDetail = (props: NavigationProps) => {
                       setAllTags([]);
                       setIsUserTagging(false);
                     }}
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      paddingHorizontal: 10,
-                      paddingVertical: 5,
-                      borderBottomColor: '#e0e0e0',
-                      borderBottomWidth: 1,
-                    }}>
+                    style={styles.taggingListItem}>
                     <LMProfilePicture
                       fallbackText={item?.name}
-                      fallbackTextBoxStyle={{
-                        borderRadius: 50,
-                        marginRight: 10,
-                      }}
+                      fallbackTextBoxStyle={styles.taggingListProfileBoxStyle}
                       size={40}
                     />
 
                     <View
-                      style={[
-                        {
-                          flex: 1,
-                          paddingVertical: 15,
-                        },
-                        {
-                          gap: Platform.OS === 'ios' ? 5 : 0,
-                        },
-                      ]}>
+                      style={styles.taggingListItemTextView}>
                       <Text
-                        style={[{fontSize: 14, color: '#000'}]}
+                        style={styles.taggingListText}
                         numberOfLines={1}>
                         {item?.name}
                       </Text>
@@ -932,7 +906,7 @@ const PostDetail = (props: NavigationProps) => {
               bounces={false}
               ListFooterComponent={
                 isLoading ? (
-                  <View style={{paddingVertical: 20}}>
+                  <View style={styles.taggingLoaderView}>
                     <LMLoader size={15} />
                   </View>
                 ) : null
