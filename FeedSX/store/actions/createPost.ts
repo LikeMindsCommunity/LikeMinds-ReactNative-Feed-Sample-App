@@ -8,6 +8,9 @@ import {
   CREATE_POST_FAILED,
   CREATE_POST,
   UPLOAD_ATTACHMENTS,
+  EDIT_POST_SUCCESS,
+  EDIT_POST,
+  EDIT_POST_FAILED,
 } from '../types/types';
 import {CALL_API} from '../apiMiddleware';
 import {lmFeedClient} from '../../..';
@@ -58,3 +61,20 @@ export const setUploadAttachments =
       Alert.alert(`${error}`);
     }
   };
+
+// edit post api action
+export const editPost = (payload?: any) => async (dispatch: Dispatch) => {
+  try {
+    return await dispatch({
+      type: EDIT_POST_SUCCESS,
+      [CALL_API]: {
+        func: lmFeedClient.editPost(payload),
+        body: payload,
+        types: [EDIT_POST, EDIT_POST_SUCCESS, EDIT_POST_FAILED],
+        showLoader: true,
+      },
+    });
+  } catch (error) {
+    Alert.alert(`${error}`);
+  }
+};

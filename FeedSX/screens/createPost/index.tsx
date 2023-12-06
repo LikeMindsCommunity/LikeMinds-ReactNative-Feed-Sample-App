@@ -6,7 +6,7 @@ import {
   Text,
   ScrollView,
 } from 'react-native';
-import React, {useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 import {
   detectURLs,
   requestStoragePermission,
@@ -25,6 +25,7 @@ import {
   LMInputText,
   LMLinkPreview,
   LMOGTagsUI,
+  LMPostUI,
   LMProfilePicture,
   LMText,
   LMVideo,
@@ -36,19 +37,26 @@ import {
   ADD_POST_TEXT,
   ADD_VIDEOS,
   CREATE_POST_PLACEHOLDER_TEXT,
+  DOCUMENT_ATTACHMENT_TYPE,
   FILE_UPLOAD_SIZE_VALIDATION,
   IMAGE_ATTACHMENT_TYPE,
   MAX_FILE_SIZE,
   MEDIA_UPLOAD_COUNT_VALIDATION,
   MIN_FILE_SIZE,
+  SAVE_POST_TEXT,
   SELECT_BOTH,
   SELECT_IMAGE,
   SELECT_VIDEO,
   VIDEO_ATTACHMENT_TYPE,
 } from '../../constants/Strings';
-import {DecodeURLRequest} from '@likeminds.community/feed-js-beta';
+import {
+  DecodeURLRequest,
+  EditPostRequest,
+  GetPostRequest,
+} from '@likeminds.community/feed-js-beta';
 import _ from 'lodash';
 import {
+  editPost,
   getDecodedUrl,
   setUploadAttachments,
 } from '../../store/actions/createPost';
@@ -59,12 +67,24 @@ import {
   convertImageVideoMetaData,
   convertDocumentMetaData,
   convertLinkMetaData,
+  convertToLMPostUI,
 } from '../../viewDataModels';
 import {styles} from './styles';
 import {showToastMessage} from '../../store/actions/toast';
 import LMLoader from '../../../LikeMinds-ReactNative-Feed-UI/src/base/LMLoader';
+import {getPost} from '../../store/actions/postDetail';
 
-const CreatePost = () => {
+interface IProps {
+  navigation: object;
+  route: {
+    key: string;
+    name: string;
+    params: string;
+    path: undefined;
+  };
+}
+
+const CreatePost = (props: IProps) => {
   const memberData = useAppSelector(state => state.feed.member);
   const dispatch = useDispatch();
   const [formattedDocumentAttachments, setFormattedDocumentAttachments] =
@@ -79,6 +99,8 @@ const CreatePost = () => {
   const [closedOnce, setClosedOnce] = useState(false);
   const [showOptions, setShowOptions] = useState(true);
   const [showSelecting, setShowSelecting] = useState(false);
+  const postToEdit = props?.route?.params;
+  const [postDetail, setPostDetail] = useState({} as LMPostUI);
   const [postContentText, setPostContentText] = useState('');
 
   // function handles the selection of images and videos
@@ -298,50 +320,83 @@ const CreatePost = () => {
     ...formattedDocumentAttachments,
   ];
 
-  return (
-    <SafeAreaView style={styles.container}>
-      {/* screen header section*/}
-      <LMHeader
-        showBackArrow
-        onBackPress={() => NavigationService.navigate(UNIVERSAL_FEED)}
-        heading="Create a Post"
-        rightComponent={
-          // post button section
-          <TouchableOpacity
-            activeOpacity={0.8}
-            hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
-            disabled={
-              allAttachment?.length > 0 ||
-              formattedLinkAttachments?.length > 0 ||
-              postContentText.trim() !== ''
-                ? false
-                : true
-            }
-            style={
-              allAttachment?.length > 0 ||
-              formattedLinkAttachments?.length > 0 ||
-              postContentText.trim() !== ''
-                ? styles.postButtonEnable
-                : styles.postButtonDisabled
-            }
-            onPress={() => {
-              // store the media for uploading and navigate to feed screen
-              dispatch(
-                setUploadAttachments({
-                  mediaAttachmentData: allAttachment,
-                  linkAttachmentData: formattedLinkAttachments,
-                  postContentData: postContentText.trim(),
-                }) as any,
-              );
-              NavigationService.goBack();
-            }}>
-            <Text style={styles.postTextStyle}>{ADD_POST_TEXT}</Text>
-          </TouchableOpacity>
+  // this function calls the getPost api
+  const getPostData = useCallback(async () => {
+    const getPostResponse = await dispatch(
+      getPost(
+        GetPostRequest.builder()
+          .setpostId(postToEdit)
+          .setpage(1)
+          .setpageSize(10)
+          .build(),
+      ) as any,
+    );
+
+    setPostDetail(
+      convertToLMPostUI(getPostResponse?.post, getPostResponse?.users),
+    );
+    return getPostResponse;
+  }, [dispatch, postToEdit]);
+
+  // this checks if the post has to be edited or not and call the get post api
+  useEffect(() => {
+    if (postToEdit) {
+      getPostData();
+    }
+  }, [postToEdit, getPostData]);
+
+  // this sets the post data in the local state to render UI
+  useEffect(() => {
+    if (postDetail?.text) {
+      setPostContentText(postDetail?.text);
+    }
+    if (postDetail?.attachments) {
+      const imageVideoMedia = [];
+      const documentMedia = [];
+      const linkPreview = [];
+      for (const media of postDetail.attachments) {
+        if (media.attachmentType === IMAGE_ATTACHMENT_TYPE) {
+          imageVideoMedia.push(media);
+        } else if (media.attachmentType === VIDEO_ATTACHMENT_TYPE) {
+          imageVideoMedia.push(media);
+        } else if (media.attachmentType === DOCUMENT_ATTACHMENT_TYPE) {
+          documentMedia.push(media);
+        } else {
+          linkPreview.push(media);
         }
-      />
+      }
+      setFormattedMediaAttachments(imageVideoMedia);
+      setFormattedDocumentAttachments(documentMedia);
+      setFormattedLinkAttachments(linkPreview);
+    }
+  }, [postDetail]);
+
+  //  this function calls the edit post api
+  const postEdit = async () => {
+    const editPostResponse = dispatch(
+      editPost(
+        EditPostRequest.builder()
+          .setHeading('')
+          .setattachments([...allAttachment, ...formattedLinkAttachments])
+          .setpostId(postDetail?.id)
+          .settext(postContentText)
+          .build(),
+      ) as any,
+    );
+    if (editPostResponse) {
+      NavigationService.goBack();
+    }
+    return editPostResponse;
+  };
+
+  // this renders the post detail UI
+  const uiRenderForPost = () => {
+    return (
       <ScrollView
         style={
-          showOptions
+          postToEdit
+            ? styles.scrollViewStyleWithoutOptions
+            : showOptions
             ? styles.scrollViewStyleWithOptions
             : styles.scrollViewStyleWithoutOptions
         }>
@@ -365,6 +420,7 @@ const CreatePost = () => {
           onType={val => {
             setPostContentText(val);
           }}
+          autoFocus={postToEdit ? true : false}
         />
 
         {/* selected media section */}
@@ -379,7 +435,7 @@ const CreatePost = () => {
             formattedMediaAttachments?.length > 1 ? (
               <LMCarousel
                 attachments={formattedMediaAttachments}
-                showCancel
+                showCancel={postToEdit ? false : true}
                 videoItem={{videoUrl: '', showControls: true}}
                 onCancel={index => removeMediaAttachment(index)}
               />
@@ -390,7 +446,7 @@ const CreatePost = () => {
                   IMAGE_ATTACHMENT_TYPE && (
                   <LMImage
                     imageUrl={`${formattedMediaAttachments[0]?.attachmentMeta.url}`}
-                    showCancel
+                    showCancel={postToEdit ? false : true}
                     onCancel={() => removeSingleAttachment()}
                   />
                 )}
@@ -399,7 +455,7 @@ const CreatePost = () => {
                   VIDEO_ATTACHMENT_TYPE && (
                   <LMVideo
                     videoUrl={`${formattedMediaAttachments[0]?.attachmentMeta.url}`}
-                    showCancel
+                    showCancel={postToEdit ? false : true}
                     showControls
                     looping={false}
                     onCancel={() => removeSingleAttachment()}
@@ -413,7 +469,7 @@ const CreatePost = () => {
             formattedDocumentAttachments.length >= 1 && (
               <LMDocument
                 attachments={formattedDocumentAttachments}
-                showCancel
+                showCancel={postToEdit ? false : true}
                 showMoreText={false}
                 onCancel={index => removeDocumentAttachment(index)}
               />
@@ -435,31 +491,99 @@ const CreatePost = () => {
             )}
         </View>
         {/* add more media button section */}
-        {allAttachment.length > 0 && allAttachment.length < 10 && (
-          <LMButton
-            onTap={
-              formattedMediaAttachments.length > 0
-                ? () => handleGallery(SELECT_BOTH)
-                : formattedDocumentAttachments.length > 0
-                ? () => handleDocument()
-                : () => {}
-            }
-            icon={{
-              assetPath: require('../../assets/images/plusAdd_icon3x.png'),
-              type: 'png',
-              height: 20,
-              width: 20,
-            }}
-            text={{
-              text: ADD_MORE_MEDIA,
-              textStyle: styles.addMoreButtonText,
-            }}
-            buttonStyle={styles.addMoreButtonView}
-          />
-        )}
+        {!postToEdit &&
+          allAttachment.length > 0 &&
+          allAttachment.length < 10 && (
+            <LMButton
+              onTap={
+                formattedMediaAttachments.length > 0
+                  ? () => handleGallery(SELECT_BOTH)
+                  : formattedDocumentAttachments.length > 0
+                  ? () => handleDocument()
+                  : () => {}
+              }
+              icon={{
+                assetPath: require('../../assets/images/plusAdd_icon3x.png'),
+                type: 'png',
+                height: 20,
+                width: 20,
+              }}
+              text={{
+                text: ADD_MORE_MEDIA,
+                textStyle: styles.addMoreButtonText,
+              }}
+              buttonStyle={styles.addMoreButtonView}
+            />
+          )}
       </ScrollView>
+    );
+  };
+  return (
+    <SafeAreaView style={styles.container}>
+      {/* screen header section*/}
+      <LMHeader
+        showBackArrow
+        onBackPress={() => NavigationService.navigate(UNIVERSAL_FEED)}
+        heading={postToEdit ? 'Edit Post' : 'Create a Post'}
+        rightComponent={
+          // post button section
+          <TouchableOpacity
+            activeOpacity={0.8}
+            hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
+            disabled={
+              postToEdit
+                ? false
+                : allAttachment?.length > 0 ||
+                  formattedLinkAttachments?.length > 0 ||
+                  postContentText.trim() !== ''
+                ? false
+                : true
+            }
+            style={
+              postToEdit
+                ? styles.enabledOpacity
+                : allAttachment?.length > 0 ||
+                  formattedLinkAttachments?.length > 0 ||
+                  postContentText.trim() !== ''
+                ? styles.enabledOpacity
+                : styles.disabledOpacity
+            }
+            onPress={
+              postToEdit
+                ? () => {
+                    postEdit();
+                  }
+                : () => {
+                    // store the media for uploading and navigate to feed screen
+                    dispatch(
+                      setUploadAttachments({
+                        mediaAttachmentData: allAttachment,
+                        linkAttachmentData: formattedLinkAttachments,
+                        postContentData: postContentText.trim(),
+                      }) as any,
+                    );
+                    NavigationService.goBack();
+                  }
+            }>
+            <Text style={styles.headerRightComponentText}>
+              {postToEdit ? SAVE_POST_TEXT : ADD_POST_TEXT}
+            </Text>
+          </TouchableOpacity>
+        }
+      />
+      {/* handles the UI to be rendered for edit post and create post */}
+      {!postToEdit ? (
+        uiRenderForPost()
+      ) : postDetail?.id ? (
+        uiRenderForPost()
+      ) : (
+        // loader view section
+        <View style={styles.rowAlignMent}>
+          <LMLoader />
+        </View>
+      )}
       {/* selection options section */}
-      {showOptions && (
+      {!postToEdit && showOptions && (
         <View>
           <View style={styles.selectionOptionsView}>
             {/* add photos button */}

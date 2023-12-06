@@ -12,6 +12,7 @@ export const REPORT_POST_MENU_ITEM = 4;
 export const EDIT_POST_MENU_ITEM = 5;
 export const DELETE_COMMENT_MENU_ITEM = 6;
 export const REPORT_COMMENT_MENU_ITEM = 7;
+export const EDIT_COMMENT_MENU_ITEM = 8;
 
 // report entity types
 export const POST_REPORT_ENTITY_TYPE = 5;
@@ -66,6 +67,7 @@ export const ADD_VIDEOS = 'Add Video';
 export const CREATE_POST_PLACEHOLDER_TEXT = 'Write something here...';
 export const ADD_MORE_MEDIA = 'Add More';
 export const ADD_POST_TEXT = 'POST';
+export const SAVE_POST_TEXT = 'SAVE';
 
 // android storage permession's text
 export const STORAGE_PERMISSION = 'Storage Permission';

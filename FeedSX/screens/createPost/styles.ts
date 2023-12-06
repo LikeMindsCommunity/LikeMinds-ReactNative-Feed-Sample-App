@@ -81,4 +81,8 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
   },
   selectingMediaText: {color: '#666666', marginTop: 12},
+  rowAlignMent: {flex: 1, justifyContent: 'center'},
+  headerRightComponentText: {color: '#5046E5', fontSize: 16, fontWeight: '500'},
+  enabledOpacity: {opacity: 1},
+  disabledOpacity: {opacity: 0.5},
 });

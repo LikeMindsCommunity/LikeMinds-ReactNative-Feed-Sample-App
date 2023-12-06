@@ -5,7 +5,10 @@ import {
   UNPIN_POST_ID,
   UNPIN_THIS_POST,
 } from '../../constants/Strings';
-import {convertUniversalFeedPosts} from '../../viewDataModels';
+import {
+  convertToLMPostUI,
+  convertUniversalFeedPosts,
+} from '../../viewDataModels';
 import {
   UNIVERSAL_FEED_SUCCESS,
   INITIATE_API_SUCCESS,
@@ -25,6 +28,7 @@ import {
   CREATE_COMMENT_SUCCESS,
   DELETE_COMMENT_STATE,
   UNIVERSAL_FEED_REFRESH_SUCCESS,
+  EDIT_POST_SUCCESS,
 } from '../types/types';
 
 const initialState = {
@@ -181,6 +185,16 @@ export function feedReducer(state = initialState, action: any) {
         }
       });
       return {...state};
+    }
+    case EDIT_POST_SUCCESS: {
+      const {post = {}, users = {}} = action.body;
+      const updatedFeed = [...state.feed];
+      const postData = convertToLMPostUI(post, users);
+      const index = updatedFeed.findIndex(item => item.id === postData.id);
+      if (index !== -1) {
+        updatedFeed[index] = postData;
+      }
+      return {...state, feed: updatedFeed};
     }
     default:
       return state;

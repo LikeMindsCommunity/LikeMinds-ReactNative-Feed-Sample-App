@@ -24,6 +24,10 @@ import {
   CREATE_REPLY,
   CREATE_REPLY_FAILED,
   CREATE_REPLY_STATE,
+  EDIT_COMMENT_SUCCESS,
+  EDIT_COMMENT_FAILED,
+  EDIT_COMMENT,
+  EDIT_COMMENT_STATE,
   POST_DATA_REFRESH_SUCCESS,
   POST_DATA_REFRESH,
   POST_DATA_REFRESH_FAILED,
@@ -200,6 +204,36 @@ export const deleteCommentStateHandler =
     }
   };
 
+// edit comment api action
+export const editComment = (payload?: any) => async (dispatch: Dispatch) => {
+  try {
+    return await dispatch({
+      type: EDIT_COMMENT_SUCCESS,
+      [CALL_API]: {
+        func: lmFeedClient.editComment(payload),
+        body: payload,
+        types: [EDIT_COMMENT, EDIT_COMMENT_SUCCESS, EDIT_COMMENT_FAILED],
+        showLoader: true,
+      },
+    });
+  } catch (error) {
+    Alert.alert(`${error}`);
+  }
+};
+
+// delete post state handler action
+export const editCommentStateHandler =
+  (payload?: any) => async (dispatch: Dispatch) => {
+    try {
+      dispatch({
+        type: EDIT_COMMENT_STATE,
+        body: payload,
+      });
+      return;
+    } catch (error) {
+      Alert.alert(`${error}`);
+    }
+  };
 // refresh post detail API action
 export const refreshPostDetail =
   (payload?: any) => async (dispatch: Dispatch) => {
