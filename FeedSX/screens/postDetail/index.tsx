@@ -62,6 +62,7 @@ import {
   COMMENT_TYPE,
   DELETE_COMMENT_MENU_ITEM,
   DELETE_POST_MENU_ITEM,
+  EDIT_COMMENT_MENU_ITEM,
   NAVIGATED_FROM_COMMENT,
   PIN_POST_MENU_ITEM,
   POST_LIKES,
@@ -259,7 +260,7 @@ const PostDetail = (props: IProps) => {
     if (itemId === DELETE_COMMENT_MENU_ITEM) {
       handleDeleteComment(true);
     }
-    if (itemId === 8) {
+    if (itemId === EDIT_COMMENT_MENU_ITEM) {
       const commentDetail = getCommentDetail(postDetail?.replies, commentId);
       setCommentToAdd(commentDetail?.text ? commentDetail.text : '');
       setTimeout(() => {

@@ -12,6 +12,7 @@ export const REPORT_POST_MENU_ITEM = 4;
 export const EDIT_POST_MENU_ITEM = 5;
 export const DELETE_COMMENT_MENU_ITEM = 6;
 export const REPORT_COMMENT_MENU_ITEM = 7;
+export const EDIT_COMMENT_MENU_ITEM = 8;
 
 // report entity types
 export const POST_REPORT_ENTITY_TYPE = 5;

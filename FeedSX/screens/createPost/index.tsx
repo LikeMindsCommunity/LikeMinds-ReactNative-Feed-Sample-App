@@ -74,7 +74,17 @@ import {showToastMessage} from '../../store/actions/toast';
 import LMLoader from '../../../LikeMinds-ReactNative-Feed-UI/src/base/LMLoader';
 import {getPost} from '../../store/actions/postDetail';
 
-const CreatePost = (props: any) => {
+interface IProps {
+  navigation: object;
+  route: {
+    key: string;
+    name: string;
+    params: string;
+    path: undefined;
+  };
+}
+
+const CreatePost = (props: IProps) => {
   const memberData = useAppSelector(state => state.feed.member);
   const dispatch = useDispatch();
   const [formattedDocumentAttachments, setFormattedDocumentAttachments] =
