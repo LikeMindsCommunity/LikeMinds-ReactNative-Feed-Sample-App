@@ -82,9 +82,7 @@ import {
   POST_DETAIL,
 } from '../../constants/screenNames';
 import {
-  extractPathfromRouteQuery,
   mentionToRouteConverter,
-  replaceMentionValues,
   uploadFilesToAWS,
 } from '../../utils';
 import STYLES from '../../constants/Styles';

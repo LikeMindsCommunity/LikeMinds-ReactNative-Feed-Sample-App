@@ -8,14 +8,12 @@ import {
   Pressable,
   TextInput,
 } from 'react-native';
-import React, {Ref, useCallback, useEffect, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {
   detectMentions,
   detectURLs,
-  extractPathfromRouteQuery,
   mentionToRouteConverter,
   replaceLastMention,
-  replaceMentionValues,
   requestStoragePermission,
   routeToMentionConverter,
   selectDocument,
@@ -83,7 +81,6 @@ import {showToastMessage} from '../../store/actions/toast';
 import LMLoader from '../../../LikeMinds-ReactNative-Feed-UI/src/base/LMLoader';
 import {getPost, getTaggingList} from '../../store/actions/postDetail';
 import {FlashList} from '@shopify/flash-list';
-import {convertToMentionValues} from '../../../LikeMinds-ReactNative-Feed-UI/src/base/LMInputText/utils';
 
 interface IProps {
   navigation: object;

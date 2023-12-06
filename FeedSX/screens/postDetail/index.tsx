@@ -94,13 +94,10 @@ import Layout from '../../constants/Layout';
 import {FlashList} from '@shopify/flash-list';
 import {
   detectMentions,
-  extractPathfromRouteQuery,
   mentionToRouteConverter,
   replaceLastMention,
-  replaceMentionValues,
   routeToMentionConverter,
 } from '../../utils';
-import {convertToMentionValues} from '../../../LikeMinds-ReactNative-Feed-UI/src/base/LMInputText/utils';
 
 interface IProps {
   navigation: object;
