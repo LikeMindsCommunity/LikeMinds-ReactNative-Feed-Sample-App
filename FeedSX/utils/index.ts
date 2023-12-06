@@ -10,6 +10,8 @@ import {replaceLastMention} from './replaceMentions';
 import {detectMentions} from './detectMentions';
 import {replaceMentionValues} from './replaceMentionValues';
 import {extractPathfromRouteQuery} from './extractMentionPath';
+import {mentionToRouteConverter} from './mentionToRouteConverter';
+import {routeToMentionConverter} from './routeToMentionConverter';
 
 export {
   timeStamp,
@@ -25,4 +27,6 @@ export {
   detectMentions,
   replaceMentionValues,
   extractPathfromRouteQuery,
+  mentionToRouteConverter,
+  routeToMentionConverter,
 };

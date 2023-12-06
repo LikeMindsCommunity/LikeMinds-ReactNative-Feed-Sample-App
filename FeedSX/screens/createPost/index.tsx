@@ -6,15 +6,18 @@ import {
   Text,
   ScrollView,
   Pressable,
+  TextInput,
 } from 'react-native';
-import React, {useCallback, useEffect, useRef, useState} from 'react';
+import React, {Ref, useCallback, useEffect, useRef, useState} from 'react';
 import {
   detectMentions,
   detectURLs,
   extractPathfromRouteQuery,
+  mentionToRouteConverter,
   replaceLastMention,
   replaceMentionValues,
   requestStoragePermission,
+  routeToMentionConverter,
   selectDocument,
   selectImageVideo,
 } from '../../utils';
@@ -33,6 +36,7 @@ import {
   LMPostUI,
   LMProfilePicture,
   LMText,
+  LMUserUI,
   LMVideo,
 } from '../../../LikeMinds-ReactNative-Feed-UI';
 import {
@@ -109,12 +113,15 @@ const CreatePost = (props: IProps) => {
   const postToEdit = props?.route?.params;
   const [postDetail, setPostDetail] = useState({} as LMPostUI);
   const [postContentText, setPostContentText] = useState('');
-  const myRef = useRef<any>();
+  const myRef = useRef<TextInput>(null);
   const [taggedUserName, setTaggedUserName] = useState('');
-  const [debounceTimeout, setDebounceTimeout] = useState<any>(null);
+  const [debounceTimeout, setDebounceTimeout] = useState<NodeJS.Timeout | null>(
+    null,
+  );
   const [page, setPage] = useState(1);
-  const [userTaggingListHeight, setUserTaggingListHeight] = useState<any>(116);
-  const [allTags, setAllTags] = useState<any>([]);
+  const [userTaggingListHeight, setUserTaggingListHeight] =
+    useState<number>(116);
+  const [allTags, setAllTags] = useState<Array<LMUserUI>>([]);
   const [isUserTagging, setIsUserTagging] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -363,18 +370,8 @@ const CreatePost = (props: IProps) => {
   // this sets the post data in the local state to render UI
   useEffect(() => {
     if (postDetail?.text) {
-      const convertedText = convertToMentionValues(
-        `${postDetail?.text} `, // to put extra space after a message whwn we want to edit a message
-        ({URLwithID, name}) => {
-          if (!URLwithID) {
-            return `@[${name}](${name})`;
-          } else {
-            return `@[${name}](${URLwithID})`;
-          }
-        },
-      );
+      const convertedText = routeToMentionConverter(postDetail?.text);
       setPostContentText(convertedText);
-      // setPostContentText(postDetail?.text);
     }
     if (postDetail?.attachments) {
       const imageVideoMedia = [];
@@ -400,15 +397,7 @@ const CreatePost = (props: IProps) => {
   //  this function calls the edit post api
   const postEdit = async () => {
     // replace mentions with route
-    const contentText = replaceMentionValues(postContentText, ({id, name}) => {
-      // example ID = `user_profile/8619d45e-9c4c-4730-af8e-4099fe3dcc4b`
-      const PATH = extractPathfromRouteQuery(id);
-      if (!PATH) {
-        return `<<${name}|route://${name}>>`;
-      } else {
-        return `<<${name}|route://${id}>>`;
-      }
-    });
+    const contentText = mentionToRouteConverter(postContentText);
     // call edit post api
     const editPostResponse = dispatch(
       editPost(
@@ -438,7 +427,9 @@ const CreatePost = (props: IProps) => {
     }
 
     // debouncing logic
-    clearTimeout(debounceTimeout);
+    if (debounceTimeout !== null) {
+      clearTimeout(debounceTimeout);
+    }
 
     const mentionListLength = newMentions.length;
     if (mentionListLength > 0) {
@@ -560,11 +551,11 @@ const CreatePost = (props: IProps) => {
             ]}>
             <FlashList
               data={[...allTags]}
-              renderItem={({item}: any) => {
+              renderItem={({item}: {item: LMUserUI}) => {
                 return (
                   <Pressable
                     onPress={() => {
-                      const uuid = item?.sdk_client_info?.uuid;
+                      const uuid = item?.sdkClientInfo?.uuid;
                       const res = replaceLastMention(
                         postContentText,
                         taggedUserName,
@@ -582,9 +573,11 @@ const CreatePost = (props: IProps) => {
                       size={40}
                     />
                     <View style={styles.taggingListItemTextView}>
-                      <Text style={styles.taggingListText} numberOfLines={1}>
-                        {item?.name}
-                      </Text>
+                      <LMText
+                        text={item?.name}
+                        maxLines={1}
+                        textStyle={styles.taggingListText}
+                      />
                     </View>
                   </Pressable>
                 );

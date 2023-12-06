@@ -83,6 +83,7 @@ import {
 } from '../../constants/screenNames';
 import {
   extractPathfromRouteQuery,
+  mentionToRouteConverter,
   replaceMentionValues,
   uploadFilesToAWS,
 } from '../../utils';
@@ -174,14 +175,7 @@ const UniversalFeed = () => {
   // this function adds a new post
   const postAdd = useCallback(async () => {
     // replace the mentions with route
-    const postContentText = replaceMentionValues(postContent, ({id, name}) => {
-      const PATH = extractPathfromRouteQuery(id);
-      if (!PATH) {
-        return `<<${name}|route://${name}>>`;
-      } else {
-        return `<<${name}|route://${id}>>`;
-      }
-    });
+    const postContentText = mentionToRouteConverter(postContent);
     // upload media to aws
     const uploadPromises = mediaAttachmemnts?.map(
       async (item: LMAttachmentUI) => {

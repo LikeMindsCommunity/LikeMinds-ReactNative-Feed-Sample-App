@@ -10,6 +10,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import React, {useCallback, useEffect, useRef, useState} from 'react';
@@ -20,6 +21,7 @@ import {
   LMInputText,
   LMPost,
   LMProfilePicture,
+  LMUserUI,
 } from '../../../LikeMinds-ReactNative-Feed-UI';
 import {useDispatch} from 'react-redux';
 import {
@@ -93,8 +95,10 @@ import {FlashList} from '@shopify/flash-list';
 import {
   detectMentions,
   extractPathfromRouteQuery,
+  mentionToRouteConverter,
   replaceLastMention,
   replaceMentionValues,
+  routeToMentionConverter,
 } from '../../utils';
 import {convertToMentionValues} from '../../../LikeMinds-ReactNative-Feed-UI/src/base/LMInputText/utils';
 
@@ -136,12 +140,15 @@ const PostDetail = (props: IProps) => {
     useState(showDeleteModal);
   const [keyboardIsVisible, setKeyboardIsVisible] = useState(false);
   const [editCommentFocus, setEditCommentFocus] = useState(false);
-  const myRef = useRef<any>();
+  const myRef = useRef<TextInput>(null);
   const [taggedUserName, setTaggedUserName] = useState('');
-  const [debounceTimeout, setDebounceTimeout] = useState<any>(null);
+  const [debounceTimeout, setDebounceTimeout] = useState<NodeJS.Timeout | null>(
+    null,
+  );
   const [page, setPage] = useState(1);
-  const [userTaggingListHeight, setUserTaggingListHeight] = useState<any>(116);
-  const [allTags, setAllTags] = useState<any>([]);
+  const [userTaggingListHeight, setUserTaggingListHeight] =
+    useState<number>(116);
+  const [allTags, setAllTags] = useState<Array<LMUserUI>>([]);
   const [isUserTagging, setIsUserTagging] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -291,15 +298,8 @@ const PostDetail = (props: IProps) => {
     if (itemId === EDIT_COMMENT_MENU_ITEM) {
       const commentDetail = getCommentDetail(postDetail?.replies, commentId);
       // converts the mentions route to mention values
-      const convertedComment = convertToMentionValues(
-        `${commentDetail?.text} `, // to put extra space after a message whwn we want to edit a message
-        ({URLwithID, name}) => {
-          if (!URLwithID) {
-            return `@[${name}](${name})`;
-          } else {
-            return `@[${name}](${URLwithID})`;
-          }
-        },
+      const convertedComment = routeToMentionConverter(
+        commentDetail?.text ? commentDetail.text : '',
       );
       setCommentToAdd(convertedComment);
       setTimeout(() => {
@@ -394,17 +394,7 @@ const PostDetail = (props: IProps) => {
   // this functions calls the add new comment api
   const addNewComment = async (postId: string) => {
     // convert the mentions to route
-    const convertedNewComment = replaceMentionValues(
-      commentToAdd,
-      ({id, name}) => {
-        const PATH = extractPathfromRouteQuery(id);
-        if (!PATH) {
-          return `<<${name}|route://${name}>>`;
-        } else {
-          return `<<${name}|route://${id}>>`;
-        }
-      },
-    );
+    const convertedNewComment = mentionToRouteConverter(commentToAdd);
     const currentDate = new Date();
     const payload = {
       postId: postId,
@@ -430,17 +420,7 @@ const PostDetail = (props: IProps) => {
   // this functions calls the add new reply to a comment api
   const addNewReply = async (postId: string, commentId: string) => {
     // convert the mentions to route
-    const convertedNewReply = replaceMentionValues(
-      commentToAdd,
-      ({id, name}) => {
-        const PATH = extractPathfromRouteQuery(id);
-        if (!PATH) {
-          return `<<${name}|route://${name}>>`;
-        } else {
-          return `<<${name}|route://${id}>>`;
-        }
-      },
-    );
+    const convertedNewReply = mentionToRouteConverter(commentToAdd);
     const currentDate = new Date();
     const payload = {
       postId: postId,
@@ -561,17 +541,7 @@ const PostDetail = (props: IProps) => {
   // this function calls the edit comment api
   const commentEdit = async () => {
     // convert the mentions to route
-    const convertedEditedComment = replaceMentionValues(
-      commentToAdd,
-      ({id, name}) => {
-        const PATH = extractPathfromRouteQuery(id);
-        if (!PATH) {
-          return `<<${name}|route://${name}>>`;
-        } else {
-          return `<<${name}|route://${id}>>`;
-        }
-      },
-    );
+    const convertedEditedComment = mentionToRouteConverter(commentToAdd);
     const payload = {
       commentId: selectedMenuItemCommentId,
       commentText: convertedEditedComment,
@@ -606,7 +576,9 @@ const PostDetail = (props: IProps) => {
     }
 
     // debouncing logic
-    clearTimeout(debounceTimeout);
+    if (debounceTimeout !== null) {
+      clearTimeout(debounceTimeout);
+    }
 
     const mentionListLength = newMentions.length;
     if (mentionListLength > 0) {
@@ -875,11 +847,11 @@ const PostDetail = (props: IProps) => {
             ]}>
             <FlashList
               data={[...allTags]}
-              renderItem={({item}: any) => {
+              renderItem={({item}: {item: LMUserUI}) => {
                 return (
                   <Pressable
                     onPress={() => {
-                      const uuid = item?.sdk_client_info?.uuid;
+                      const uuid = item?.sdkClientInfo?.uuid;
                       const res = replaceLastMention(
                         commentToAdd,
                         taggedUserName,
