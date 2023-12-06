@@ -313,7 +313,7 @@ export function postDetailReducer(state = initialState, action: any) {
       const editCommentIndex =
         updatedPostDetail?.replies &&
         updatedPostDetail.replies.findIndex(
-          (item: any) => item?.id === commentId,
+          (item: LMCommentUI) => item?.id === commentId,
         );
       // removes that comment from the data
       if (
@@ -330,7 +330,7 @@ export function postDetailReducer(state = initialState, action: any) {
             const editCommentIndexChild =
               updatedPostDetail?.replies &&
               updatedPostDetail.replies[i].replies.findIndex(
-                (item: any) => item?.id === commentId,
+                (item: LMCommentUI) => item?.id === commentId,
               );
             // removes that child comment from the data
             if (

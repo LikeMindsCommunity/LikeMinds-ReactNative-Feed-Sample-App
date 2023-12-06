@@ -81,7 +81,17 @@ import {getPost, getTaggingList} from '../../store/actions/postDetail';
 import {FlashList} from '@shopify/flash-list';
 import {convertToMentionValues} from '../../../LikeMinds-ReactNative-Feed-UI/src/base/LMInputText/utils';
 
-const CreatePost = (props: any) => {
+interface IProps {
+  navigation: object;
+  route: {
+    key: string;
+    name: string;
+    params: string;
+    path: undefined;
+  };
+}
+
+const CreatePost = (props: IProps) => {
   const memberData = useAppSelector(state => state.feed.member);
   const dispatch = useDispatch();
   const [formattedDocumentAttachments, setFormattedDocumentAttachments] =
@@ -99,7 +109,7 @@ const CreatePost = (props: any) => {
   const postToEdit = props?.route?.params;
   const [postDetail, setPostDetail] = useState({} as LMPostUI);
   const [postContentText, setPostContentText] = useState('');
-  let myRef = useRef<any>();
+  const myRef = useRef<any>();
   const [taggedUserName, setTaggedUserName] = useState('');
   const [debounceTimeout, setDebounceTimeout] = useState<any>(null);
   const [page, setPage] = useState(1);
@@ -353,7 +363,7 @@ const CreatePost = (props: any) => {
   // this sets the post data in the local state to render UI
   useEffect(() => {
     if (postDetail?.text) {
-      let convertedText = convertToMentionValues(
+      const convertedText = convertToMentionValues(
         `${postDetail?.text} `, // to put extra space after a message whwn we want to edit a message
         ({URLwithID, name}) => {
           if (!!!URLwithID) {
@@ -390,9 +400,9 @@ const CreatePost = (props: any) => {
   //  this function calls the edit post api
   const postEdit = async () => {
     // replace mentions with route
-    let contentText = replaceMentionValues(postContentText, ({id, name}) => {
+    const contentText = replaceMentionValues(postContentText, ({id, name}) => {
       // example ID = `user_profile/8619d45e-9c4c-4730-af8e-4099fe3dcc4b`
-      let PATH = extractPathfromRouteQuery(id);
+      const PATH = extractPathfromRouteQuery(id);
       if (!!!PATH) {
         return `<<${name}|route://${name}>>`;
       } else {
@@ -445,12 +455,12 @@ const CreatePost = (props: any) => {
         );
 
         if (mentionListLength > 0) {
-          let tagsLength = taggingListResponse?.members?.length;
-          let arrLength = tagsLength;
+          const tagsLength = taggingListResponse?.members?.length;
+          const arrLength = tagsLength;
           if (arrLength >= 5) {
             setUserTaggingListHeight(5 * 58);
           } else if (arrLength < 5) {
-            let height = tagsLength * 100;
+            const height = tagsLength * 100;
             setUserTaggingListHeight(height);
           }
           setAllTags(taggingListResponse?.members);
@@ -487,7 +497,7 @@ const CreatePost = (props: any) => {
 
   // this handles the pagination of tagging list
   const handleLoadMore = () => {
-    let userTaggingListLength = allTags.length;
+    const userTaggingListLength = allTags.length;
     if (!isLoading && userTaggingListLength > 0) {
       // checking if conversations length is greater the 15 as it convered all the screen sizes of mobiles, and pagination API will never call if screen is not full messages.
       if (userTaggingListLength >= 10 * page) {
@@ -542,18 +552,19 @@ const CreatePost = (props: any) => {
         {/* users tagging list */}
         {allTags && isUserTagging ? (
           <View
-            style={[styles.taggingListView,
+            style={[
+              styles.taggingListView,
               {
-                height: userTaggingListHeight
-              }
+                height: userTaggingListHeight,
+              },
             ]}>
             <FlashList
               data={[...allTags]}
-              renderItem={({item, index}: any) => {
+              renderItem={({item}: any) => {
                 return (
                   <Pressable
                     onPress={() => {
-                      let uuid = item?.sdk_client_info?.uuid;
+                      const uuid = item?.sdk_client_info?.uuid;
                       const res = replaceLastMention(
                         postContentText,
                         taggedUserName,
@@ -570,11 +581,8 @@ const CreatePost = (props: any) => {
                       fallbackTextBoxStyle={styles.taggingListProfileBoxStyle}
                       size={40}
                     />
-                    <View
-                      style={styles.taggingListItemTextView}>
-                      <Text
-                        style={styles.taggingListText}
-                        numberOfLines={1}>
+                    <View style={styles.taggingListItemTextView}>
+                      <Text style={styles.taggingListText} numberOfLines={1}>
                         {item?.name}
                       </Text>
                     </View>

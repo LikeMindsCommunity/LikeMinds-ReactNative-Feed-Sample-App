@@ -174,8 +174,8 @@ const UniversalFeed = () => {
   // this function adds a new post
   const postAdd = useCallback(async () => {
     // replace the mentions with route
-    let postContentText = replaceMentionValues(postContent, ({id, name}) => {
-      let PATH = extractPathfromRouteQuery(id);
+    const postContentText = replaceMentionValues(postContent, ({id, name}) => {
+      const PATH = extractPathfromRouteQuery(id);
       if (!!!PATH) {
         return `<<${name}|route://${name}>>`;
       } else {

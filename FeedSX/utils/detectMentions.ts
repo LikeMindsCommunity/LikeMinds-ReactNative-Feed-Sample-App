@@ -5,7 +5,6 @@ export function detectMentions(input: string) {
   let match;
 
   while ((match = mentionRegex.exec(input)) !== null) {
-    const startIndex = match.index;
     const endIndex = mentionRegex.lastIndex;
     const nextChar = input.charAt(endIndex);
 

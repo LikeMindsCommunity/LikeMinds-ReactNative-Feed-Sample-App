@@ -19,7 +19,6 @@ import {
   LMHeader,
   LMInputText,
   LMPost,
-  LMPostUI,
   LMProfilePicture,
 } from '../../../LikeMinds-ReactNative-Feed-UI';
 import {useDispatch} from 'react-redux';
@@ -72,6 +71,7 @@ import {
   DELETE_COMMENT_MENU_ITEM,
   DELETE_POST_MENU_ITEM,
   EDIT_POST_MENU_ITEM,
+  EDIT_COMMENT_MENU_ITEM,
   NAVIGATED_FROM_COMMENT,
   PIN_POST_MENU_ITEM,
   POST_LIKES,
@@ -97,9 +97,18 @@ import {
   replaceMentionValues,
 } from '../../utils';
 import {convertToMentionValues} from '../../../LikeMinds-ReactNative-Feed-UI/src/base/LMInputText/utils';
-import {NavigationProps} from '../../models/addPostMetaData';
 
-const PostDetail = (props: NavigationProps) => {
+interface IProps {
+  navigation: object;
+  route: {
+    key: string;
+    name: string;
+    params: Array<string>;
+    path: undefined;
+  };
+}
+
+const PostDetail = (props: IProps) => {
   const dispatch = useDispatch();
   const modalPosition = {x: 0, y: 0};
   const [showActionListModal, setShowActionListModal] = useState(false);
@@ -127,7 +136,7 @@ const PostDetail = (props: NavigationProps) => {
     useState(showDeleteModal);
   const [keyboardIsVisible, setKeyboardIsVisible] = useState(false);
   const [editCommentFocus, setEditCommentFocus] = useState(false);
-  let myRef = useRef<any>();
+  const myRef = useRef<any>();
   const [taggedUserName, setTaggedUserName] = useState('');
   const [debounceTimeout, setDebounceTimeout] = useState<any>(null);
   const [page, setPage] = useState(1);
@@ -154,7 +163,7 @@ const PostDetail = (props: NavigationProps) => {
     );
     setLocalRefresh(false);
     setRefreshing(false);
-  }, [dispatch]);
+  }, [dispatch, props.route.params]);
 
   // this function closes the post action list modal
   const closePostActionListModal = () => {
@@ -279,10 +288,10 @@ const PostDetail = (props: NavigationProps) => {
     if (itemId === DELETE_COMMENT_MENU_ITEM) {
       handleDeleteComment(true);
     }
-    if (itemId === 8) {
+    if (itemId === EDIT_COMMENT_MENU_ITEM) {
       const commentDetail = getCommentDetail(postDetail?.replies, commentId);
       // converts the mentions route to mention values
-      let convertedComment = convertToMentionValues(
+      const convertedComment = convertToMentionValues(
         `${commentDetail?.text} `, // to put extra space after a message whwn we want to edit a message
         ({URLwithID, name}) => {
           if (!!!URLwithID) {
@@ -385,10 +394,10 @@ const PostDetail = (props: NavigationProps) => {
   // this functions calls the add new comment api
   const addNewComment = async (postId: string) => {
     // convert the mentions to route
-    let convertedNewComment = replaceMentionValues(
+    const convertedNewComment = replaceMentionValues(
       commentToAdd,
       ({id, name}) => {
-        let PATH = extractPathfromRouteQuery(id);
+        const PATH = extractPathfromRouteQuery(id);
         if (!!!PATH) {
           return `<<${name}|route://${name}>>`;
         } else {
@@ -421,14 +430,17 @@ const PostDetail = (props: NavigationProps) => {
   // this functions calls the add new reply to a comment api
   const addNewReply = async (postId: string, commentId: string) => {
     // convert the mentions to route
-    let convertedNewReply = replaceMentionValues(commentToAdd, ({id, name}) => {
-      let PATH = extractPathfromRouteQuery(id);
-      if (!!!PATH) {
-        return `<<${name}|route://${name}>>`;
-      } else {
-        return `<<${name}|route://${id}>>`;
-      }
-    });
+    const convertedNewReply = replaceMentionValues(
+      commentToAdd,
+      ({id, name}) => {
+        const PATH = extractPathfromRouteQuery(id);
+        if (!!!PATH) {
+          return `<<${name}|route://${name}>>`;
+        } else {
+          return `<<${name}|route://${id}>>`;
+        }
+      },
+    );
     const currentDate = new Date();
     const payload = {
       postId: postId,
@@ -549,10 +561,10 @@ const PostDetail = (props: NavigationProps) => {
   // this function calls the edit comment api
   const commentEdit = async () => {
     // convert the mentions to route
-    let convertedEditedComment = replaceMentionValues(
+    const convertedEditedComment = replaceMentionValues(
       commentToAdd,
       ({id, name}) => {
-        let PATH = extractPathfromRouteQuery(id);
+        const PATH = extractPathfromRouteQuery(id);
         if (!!!PATH) {
           return `<<${name}|route://${name}>>`;
         } else {
@@ -596,7 +608,7 @@ const PostDetail = (props: NavigationProps) => {
     // debouncing logic
     clearTimeout(debounceTimeout);
 
-    let mentionListLength = newMentions.length;
+    const mentionListLength = newMentions.length;
     if (mentionListLength > 0) {
       const timeoutID = setTimeout(async () => {
         setPage(1);
@@ -610,12 +622,12 @@ const PostDetail = (props: NavigationProps) => {
           ) as any,
         );
         if (mentionListLength > 0) {
-          let tagsLength = taggingListResponse?.members?.length;
-          let arrLength = tagsLength;
+          const tagsLength = taggingListResponse?.members?.length;
+          const arrLength = tagsLength;
           if (arrLength >= 5) {
             setUserTaggingListHeight(5 * 58);
           } else if (arrLength < 5) {
-            let height = tagsLength * 100;
+            const height = tagsLength * 100;
             setUserTaggingListHeight(height);
           }
           setAllTags(taggingListResponse?.members);
@@ -652,7 +664,7 @@ const PostDetail = (props: NavigationProps) => {
 
   // this handles the pagination of tagging list
   const handleLoadMore = () => {
-    let userTaggingListLength = allTags.length;
+    const userTaggingListLength = allTags.length;
     if (!isLoading && userTaggingListLength > 0) {
       // checking if conversations length is greater the 15 as it convered all the screen sizes of mobiles, and pagination API will never call if screen is not full messages.
       if (userTaggingListLength >= 10 * page) {
@@ -863,11 +875,11 @@ const PostDetail = (props: NavigationProps) => {
             ]}>
             <FlashList
               data={[...allTags]}
-              renderItem={({item, index}: any) => {
+              renderItem={({item}: any) => {
                 return (
                   <Pressable
                     onPress={() => {
-                      let uuid = item?.sdk_client_info?.uuid;
+                      const uuid = item?.sdk_client_info?.uuid;
                       const res = replaceLastMention(
                         commentToAdd,
                         taggedUserName,
@@ -885,11 +897,8 @@ const PostDetail = (props: NavigationProps) => {
                       size={40}
                     />
 
-                    <View
-                      style={styles.taggingListItemTextView}>
-                      <Text
-                        style={styles.taggingListText}
-                        numberOfLines={1}>
+                    <View style={styles.taggingListItemTextView}>
+                      <Text style={styles.taggingListText} numberOfLines={1}>
                         {item?.name}
                       </Text>
                     </View>

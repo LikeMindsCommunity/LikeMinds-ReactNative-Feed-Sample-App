@@ -77,7 +77,7 @@ export const styles = StyleSheet.create({
     width: '100%',
     position: 'relative',
     overflow: 'hidden',
-    backgroundColor: '#fff'
+    backgroundColor: '#fff',
   },
   taggingListItem: {
     display: 'flex',
@@ -98,5 +98,5 @@ export const styles = StyleSheet.create({
     gap: Platform.OS === 'ios' ? 5 : 0,
   },
   taggingListText: {fontSize: 14, color: '#000'},
-  taggingLoaderView: {paddingVertical: 20}
+  taggingLoaderView: {paddingVertical: 20},
 });

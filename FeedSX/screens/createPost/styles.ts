@@ -113,5 +113,5 @@ export const styles = StyleSheet.create({
     gap: Platform.OS === 'ios' ? 5 : 0,
   },
   taggingListText: {fontSize: 14, color: '#000'},
-  taggingLoaderView: {paddingVertical: 20}
+  taggingLoaderView: {paddingVertical: 20},
 });
