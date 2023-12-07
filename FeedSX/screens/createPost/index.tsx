@@ -395,12 +395,13 @@ const CreatePost = (props: IProps) => {
   const postEdit = async () => {
     // replace mentions with route
     const contentText = mentionToRouteConverter(postContentText);
+    const linkAttachments = showLinkPreview ? formattedLinkAttachments : []
     // call edit post api
     const editPostResponse = dispatch(
       editPost(
         EditPostRequest.builder()
           .setHeading('')
-          .setattachments([...allAttachment, ...formattedLinkAttachments])
+          .setattachments([...allAttachment, ...linkAttachments])
           .setpostId(postDetail?.id)
           .settext(contentText)
           .build(),
