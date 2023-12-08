@@ -500,7 +500,7 @@ const CreatePost = (props: IProps) => {
   // this renders the post detail UI
   const uiRenderForPost = () => {
     return (
-      <ScrollView
+      <ScrollView keyboardShouldPersistTaps={'handled'}
         style={
           postToEdit
             ? styles.scrollViewStyleWithoutOptions

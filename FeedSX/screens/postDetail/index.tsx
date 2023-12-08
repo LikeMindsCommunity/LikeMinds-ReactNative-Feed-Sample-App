@@ -535,7 +535,9 @@ const PostDetail = (props: IProps) => {
       () => {
         setKeyboardIsVisible(false);
         Keyboard.dismiss()
-        setReplyOnComment({textInputFocus:false, commentId:''})
+        if(Keyboard.isVisible() === false) {
+          setReplyOnComment({textInputFocus:false, commentId:''})
+        }
       },
     );
 

@@ -53,8 +53,7 @@ export const styles = StyleSheet.create({
   textInputStyle: {
     margin: 0,
     borderRadius: 0,
-    paddingVertical: 0,
-    shadowOpacity: 0.5,
+    shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 10,
     shadowColor: '#000',
@@ -69,6 +68,8 @@ export const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 0,
     width: '100%',
+    flexGrow: 1,
+    padding: 0,
   },
   lightGreyColorText: {color: '#0F1E3D66'},
   taggingListView: {
