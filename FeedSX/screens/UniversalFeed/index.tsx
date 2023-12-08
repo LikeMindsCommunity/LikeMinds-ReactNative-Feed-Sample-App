@@ -442,7 +442,12 @@ const UniversalFeed = () => {
           }
           data={feedData}
           renderItem={({item}: {item: LMPostUI}) => (
-            <TouchableOpacity
+            <TouchableOpacity 
+            disabled={item?.attachments && item?.attachments?.filter(
+              item =>
+                item?.attachmentType === IMAGE_ATTACHMENT_TYPE ||
+                item?.attachmentType === VIDEO_ATTACHMENT_TYPE,
+            ).length >= 2 ? true : false}
               activeOpacity={0.8}
               onPress={() => {
                 dispatch(clearPostDetail() as any);

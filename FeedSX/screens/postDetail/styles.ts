@@ -7,7 +7,7 @@ export const styles = StyleSheet.create({
   },
   mainContainer: {
     flex: 1,
-    height: Layout.window.height - Layout.normalize(44),
+    height: Layout.window.height - Layout.normalize(54),
   },
   commentCountText: {
     paddingHorizontal: 15,
@@ -35,7 +35,7 @@ export const styles = StyleSheet.create({
   },
   replyCommentSection: {
     position: 'absolute',
-    bottom: Layout.normalize(44),
+    bottom: Layout.normalize(54),
     backgroundColor: '#e9e9e9',
     paddingHorizontal: 15,
     width: Layout.window.width,
@@ -53,7 +53,8 @@ export const styles = StyleSheet.create({
   textInputStyle: {
     margin: 0,
     borderRadius: 0,
-    shadowOpacity: 0.2,
+    paddingVertical: 0,
+    shadowOpacity: 0.5,
     shadowRadius: 4,
     elevation: 10,
     shadowColor: '#000',
@@ -61,15 +62,13 @@ export const styles = StyleSheet.create({
       width: 5,
       height: 5,
     },
-    height: Layout.normalize(44),
+    height: Layout.normalize(54),
     paddingHorizontal: 15,
     fontSize: 14,
     color: '#222020',
     position: 'absolute',
     bottom: 0,
-    width: '100%',
-    flexGrow: 1,
-    padding: 0,
+    width: '100%'
   },
   lightGreyColorText: {color: '#0F1E3D66'},
   taggingListView: {

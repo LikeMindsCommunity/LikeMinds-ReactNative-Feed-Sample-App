@@ -6,7 +6,6 @@ import {
   Platform,
   Pressable,
   RefreshControl,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -98,6 +97,7 @@ import {
   replaceLastMention,
   routeToMentionConverter,
 } from '../../utils';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface IProps {
   navigation: object;
@@ -534,9 +534,11 @@ const PostDetail = (props: IProps) => {
       'keyboardDidHide',
       () => {
         setKeyboardIsVisible(false);
-        Keyboard.dismiss()
         if(Keyboard.isVisible() === false) {
+          Keyboard.dismiss()
           setReplyOnComment({textInputFocus:false, commentId:''})
+          setEditCommentFocus(false);
+          setCommentFocus(false)
         }
       },
     );
@@ -657,7 +659,7 @@ const PostDetail = (props: IProps) => {
   };
 
   return (
-    <SafeAreaView style={styles.flexView}>
+    <SafeAreaView edges={['left', 'right', 'top']} style={styles.flexView} >
       <KeyboardAvoidingView
         enabled={Platform.OS === 'android' ? true : false}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -695,8 +697,8 @@ const PostDetail = (props: IProps) => {
                   allTags && isUserTagging
                     ? 0
                     : replyOnComment.textInputFocus
-                    ? Layout.normalize(74)
-                    : Layout.normalize(44),
+                    ? Layout.normalize(84)
+                    : Layout.normalize(54),
               },
             ])}>
             <>
@@ -854,8 +856,8 @@ const PostDetail = (props: IProps) => {
               styles.taggingListView,
               {
                 paddingBottom: replyOnComment.textInputFocus
-                  ? Layout.normalize(74)
-                  : Layout.normalize(44),
+                  ? Layout.normalize(84)
+                  : Layout.normalize(54),
                 height: userTaggingListHeight,
               },
             ]}>
@@ -948,7 +950,7 @@ const PostDetail = (props: IProps) => {
             },
             isClickable: commentToAdd ? false : true,
           }}
-          numberOfLines={6}
+          multilineField={true}
           partTypes={[
             {
               trigger: '@', // Should be a single character like '@' or '#'
