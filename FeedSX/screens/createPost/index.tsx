@@ -5,11 +5,17 @@ import {
   SafeAreaView,
   Text,
   ScrollView,
+  Pressable,
+  TextInput,
 } from 'react-native';
-import React, {useCallback, useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {
+  detectMentions,
   detectURLs,
+  mentionToRouteConverter,
+  replaceLastMention,
   requestStoragePermission,
+  routeToMentionConverter,
   selectDocument,
   selectImageVideo,
 } from '../../utils';
@@ -28,6 +34,7 @@ import {
   LMPostUI,
   LMProfilePicture,
   LMText,
+  LMUserUI,
   LMVideo,
 } from '../../../LikeMinds-ReactNative-Feed-UI';
 import {
@@ -53,6 +60,7 @@ import {
   DecodeURLRequest,
   EditPostRequest,
   GetPostRequest,
+  GetTaggingListRequest,
 } from '@likeminds.community/feed-js-beta';
 import _ from 'lodash';
 import {
@@ -62,7 +70,6 @@ import {
 } from '../../store/actions/createPost';
 import {useDispatch} from 'react-redux';
 import {NavigationService} from '../../navigation';
-import {UNIVERSAL_FEED} from '../../constants/screenNames';
 import {
   convertImageVideoMetaData,
   convertDocumentMetaData,
@@ -72,7 +79,8 @@ import {
 import {styles} from './styles';
 import {showToastMessage} from '../../store/actions/toast';
 import LMLoader from '../../../LikeMinds-ReactNative-Feed-UI/src/base/LMLoader';
-import {getPost} from '../../store/actions/postDetail';
+import {getPost, getTaggingList} from '../../store/actions/postDetail';
+import {FlashList} from '@shopify/flash-list';
 
 interface IProps {
   navigation: object;
@@ -102,6 +110,17 @@ const CreatePost = (props: IProps) => {
   const postToEdit = props?.route?.params;
   const [postDetail, setPostDetail] = useState({} as LMPostUI);
   const [postContentText, setPostContentText] = useState('');
+  const myRef = useRef<TextInput>(null);
+  const [taggedUserName, setTaggedUserName] = useState('');
+  const [debounceTimeout, setDebounceTimeout] = useState<NodeJS.Timeout | null>(
+    null,
+  );
+  const [page, setPage] = useState(1);
+  const [userTaggingListHeight, setUserTaggingListHeight] =
+    useState<number>(116);
+  const [allTags, setAllTags] = useState<Array<LMUserUI>>([]);
+  const [isUserTagging, setIsUserTagging] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   // function handles the selection of images and videos
   const setSelectedImageVideo = (type: string) => {
@@ -348,7 +367,8 @@ const CreatePost = (props: IProps) => {
   // this sets the post data in the local state to render UI
   useEffect(() => {
     if (postDetail?.text) {
-      setPostContentText(postDetail?.text);
+      const convertedText = routeToMentionConverter(postDetail?.text);
+      setPostContentText(convertedText);
     }
     if (postDetail?.attachments) {
       const imageVideoMedia = [];
@@ -373,13 +393,17 @@ const CreatePost = (props: IProps) => {
 
   //  this function calls the edit post api
   const postEdit = async () => {
+    // replace mentions with route
+    const contentText = mentionToRouteConverter(postContentText);
+    const linkAttachments = showLinkPreview ? formattedLinkAttachments : [];
+    // call edit post api
     const editPostResponse = dispatch(
       editPost(
         EditPostRequest.builder()
           .setHeading('')
-          .setattachments([...allAttachment, ...formattedLinkAttachments])
+          .setattachments([...allAttachment, ...linkAttachments])
           .setpostId(postDetail?.id)
-          .settext(postContentText)
+          .settext(contentText)
           .build(),
       ) as any,
     );
@@ -389,10 +413,95 @@ const CreatePost = (props: IProps) => {
     return editPostResponse;
   };
 
+  // this function is called on change text of inputText
+  const handleInputChange = async (event: string) => {
+    setPostContentText(event);
+
+    const newMentions = detectMentions(event);
+
+    if (newMentions.length > 0) {
+      const length = newMentions.length;
+      setTaggedUserName(newMentions[length - 1]);
+    }
+
+    // debouncing logic
+    if (debounceTimeout !== null) {
+      clearTimeout(debounceTimeout);
+    }
+
+    const mentionListLength = newMentions.length;
+    if (mentionListLength > 0) {
+      const timeoutID = setTimeout(async () => {
+        setPage(1);
+        const taggingListResponse = await dispatch(
+          getTaggingList(
+            GetTaggingListRequest.builder()
+              .setsearchName(newMentions[mentionListLength - 1])
+              .setpage(1)
+              .setpageSize(10)
+              .build(),
+          ) as any,
+        );
+
+        if (mentionListLength > 0) {
+          const tagsLength = taggingListResponse?.members?.length;
+          const arrLength = tagsLength;
+          if (arrLength >= 5) {
+            setUserTaggingListHeight(5 * 58);
+          } else if (arrLength < 5) {
+            const height = tagsLength * 100;
+            setUserTaggingListHeight(height);
+          }
+          setAllTags(taggingListResponse?.members);
+          setIsUserTagging(true);
+        }
+      }, 500);
+
+      setDebounceTimeout(timeoutID);
+    } else {
+      if (isUserTagging) {
+        setAllTags([]);
+        setIsUserTagging(false);
+      }
+    }
+  };
+
+  // this calls the tagging list api for different page number
+  const loadData = async (newPage: number) => {
+    setIsLoading(true);
+    const taggingListResponse = await dispatch(
+      getTaggingList(
+        GetTaggingListRequest.builder()
+          .setsearchName(taggedUserName)
+          .setpage(newPage)
+          .setpageSize(10)
+          .build(),
+      ) as any,
+    );
+    if (taggingListResponse) {
+      setAllTags([...allTags, ...taggingListResponse.members]);
+      setIsLoading(false);
+    }
+  };
+
+  // this handles the pagination of tagging list
+  const handleLoadMore = () => {
+    const userTaggingListLength = allTags.length;
+    if (!isLoading && userTaggingListLength > 0) {
+      // checking if conversations length is greater the 15 as it convered all the screen sizes of mobiles, and pagination API will never call if screen is not full messages.
+      if (userTaggingListLength >= 10 * page) {
+        const newPage = page + 1;
+        setPage(newPage);
+        loadData(newPage);
+      }
+    }
+  };
+
   // this renders the post detail UI
   const uiRenderForPost = () => {
     return (
       <ScrollView
+        keyboardShouldPersistTaps={'handled'}
         style={
           postToEdit
             ? styles.scrollViewStyleWithoutOptions
@@ -416,12 +525,83 @@ const CreatePost = (props: IProps) => {
           placeholderTextColor="#0F1E3D66"
           inputTextStyle={styles.textInputView}
           multilineField
+          inputRef={myRef}
           inputText={postContentText}
-          onType={val => {
-            setPostContentText(val);
-          }}
+          onType={handleInputChange}
           autoFocus={postToEdit ? true : false}
+          partTypes={[
+            {
+              trigger: '@', // Should be a single character like '@' or '#'
+              textStyle: {
+                color: '#007AFF',
+              }, // The mention style in the input
+            },
+          ]}
         />
+
+        {/* users tagging list */}
+        {allTags && isUserTagging ? (
+          <View
+            style={[
+              styles.taggingListView,
+              {
+                height: userTaggingListHeight,
+              },
+            ]}>
+            <FlashList
+              data={[...allTags]}
+              renderItem={({item}: {item: LMUserUI}) => {
+                return (
+                  <Pressable
+                    onPress={() => {
+                      const uuid = item?.sdkClientInfo?.uuid;
+                      const res = replaceLastMention(
+                        postContentText,
+                        taggedUserName,
+                        item?.name,
+                        uuid ? `user_profile/${uuid}` : uuid,
+                      );
+                      setPostContentText(res);
+                      setAllTags([]);
+                      setIsUserTagging(false);
+                    }}
+                    style={styles.taggingListItem}>
+                    <LMProfilePicture
+                      fallbackText={item?.name}
+                      fallbackTextBoxStyle={styles.taggingListProfileBoxStyle}
+                      size={40}
+                    />
+                    <View style={styles.taggingListItemTextView}>
+                      <LMText
+                        text={item?.name}
+                        maxLines={1}
+                        textStyle={styles.taggingListText}
+                      />
+                    </View>
+                  </Pressable>
+                );
+              }}
+              extraData={{
+                value: [postContentText, allTags],
+              }}
+              estimatedItemSize={75}
+              keyboardShouldPersistTaps={'handled'}
+              onEndReached={handleLoadMore}
+              onEndReachedThreshold={1}
+              bounces={false}
+              ListFooterComponent={
+                isLoading ? (
+                  <View style={styles.taggingLoaderView}>
+                    <LMLoader size={15} />
+                  </View>
+                ) : null
+              }
+              keyExtractor={(item: any, index) => {
+                return index?.toString();
+              }}
+            />
+          </View>
+        ) : null}
 
         {/* selected media section */}
         <View>
@@ -523,7 +703,7 @@ const CreatePost = (props: IProps) => {
       {/* screen header section*/}
       <LMHeader
         showBackArrow
-        onBackPress={() => NavigationService.navigate(UNIVERSAL_FEED)}
+        onBackPress={() => NavigationService.goBack()}
         heading={postToEdit ? 'Edit Post' : 'Create a Post'}
         rightComponent={
           // post button section

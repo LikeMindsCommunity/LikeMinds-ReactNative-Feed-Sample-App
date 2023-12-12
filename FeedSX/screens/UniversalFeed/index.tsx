@@ -81,10 +81,11 @@ import {
   LIKES_LIST,
   POST_DETAIL,
 } from '../../constants/screenNames';
-import {uploadFilesToAWS} from '../../utils';
+import {mentionToRouteConverter, uploadFilesToAWS} from '../../utils';
 import STYLES from '../../constants/Styles';
 import {showToastMessage} from '../../store/actions/toast';
 import {clearPostDetail} from '../../store/actions/postDetail';
+import _ from 'lodash';
 
 const UniversalFeed = () => {
   const dispatch = useDispatch();
@@ -169,6 +170,9 @@ const UniversalFeed = () => {
 
   // this function adds a new post
   const postAdd = useCallback(async () => {
+    // replace the mentions with route
+    const postContentText = mentionToRouteConverter(postContent);
+    // upload media to aws
     const uploadPromises = mediaAttachmemnts?.map(
       async (item: LMAttachmentUI) => {
         return uploadFilesToAWS(
@@ -186,7 +190,7 @@ const UniversalFeed = () => {
       addPost(
         AddPostRequest.builder()
           .setAttachments([...updatedAttachments, ...linkAttachments])
-          .setText(postContent)
+          .setText(postContentText)
           .build(),
       ) as any,
     );
@@ -245,6 +249,16 @@ const UniversalFeed = () => {
     );
     return postLikeResponse;
   }
+
+  // debounce on save post function
+  const debouncedFunction = _.debounce(savePostHandler, 500); // Adjust the debounce time (in milliseconds) as needed
+
+  // useEffect hook to clean up the debounced function
+  useEffect(() => {
+    return () => {
+      debouncedFunction.cancel(); // Cancel any pending debounced executions when the component unmounts
+    };
+  }, [debouncedFunction]);
 
   // this functions hanldes the post save functionality
   async function savePostHandler(id: string, saved?: boolean) {
@@ -440,6 +454,16 @@ const UniversalFeed = () => {
           data={feedData}
           renderItem={({item}: {item: LMPostUI}) => (
             <TouchableOpacity
+              disabled={
+                item?.attachments &&
+                item?.attachments?.filter(
+                  media =>
+                    media?.attachmentType === IMAGE_ATTACHMENT_TYPE ||
+                    media?.attachmentType === VIDEO_ATTACHMENT_TYPE,
+                ).length >= 2
+                  ? true
+                  : false
+              }
               activeOpacity={0.8}
               onPress={() => {
                 dispatch(clearPostDetail() as any);
@@ -481,7 +505,7 @@ const UniversalFeed = () => {
                   },
                   saveButton: {
                     onTap: () => {
-                      savePostHandler(item?.id, item?.isSaved);
+                      debouncedFunction(item?.id, item?.isSaved);
                     },
                   },
                   likeTextButton: {
@@ -538,7 +562,7 @@ const UniversalFeed = () => {
       {/* create post button section */}
       <TouchableOpacity
         activeOpacity={0.8}
-        disabled={feedData.length > 0 ? false : true}
+        disabled={feedData?.length > 0 ? false : true}
         style={[
           styles.newPostButtonView,
           showCreatePost

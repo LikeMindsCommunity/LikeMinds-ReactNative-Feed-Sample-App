@@ -1,4 +1,4 @@
-import {StyleSheet} from 'react-native';
+import {Platform, StyleSheet} from 'react-native';
 import Layout from '../../constants//Layout';
 
 export const styles = StyleSheet.create({
@@ -7,7 +7,7 @@ export const styles = StyleSheet.create({
   },
   mainContainer: {
     flex: 1,
-    height: Layout.window.height - Layout.normalize(44),
+    height: Layout.window.height - Layout.normalize(54),
   },
   commentCountText: {
     paddingHorizontal: 15,
@@ -35,7 +35,7 @@ export const styles = StyleSheet.create({
   },
   replyCommentSection: {
     position: 'absolute',
-    bottom: Layout.normalize(44),
+    bottom: Layout.normalize(54),
     backgroundColor: '#e9e9e9',
     paddingHorizontal: 15,
     width: Layout.window.width,
@@ -43,6 +43,7 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    zIndex: 2000,
   },
   crossIconStyle: {
     width: 15,
@@ -61,7 +62,7 @@ export const styles = StyleSheet.create({
       width: 5,
       height: 5,
     },
-    height: Layout.normalize(44),
+    height: Layout.normalize(54),
     paddingHorizontal: 15,
     fontSize: 14,
     color: '#222020',
@@ -70,4 +71,32 @@ export const styles = StyleSheet.create({
     width: '100%',
   },
   lightGreyColorText: {color: '#0F1E3D66'},
+  taggingListView: {
+    borderTopRightRadius: 10,
+    borderTopLeftRadius: 10,
+    width: '100%',
+    position: 'relative',
+    overflow: 'hidden',
+    backgroundColor: '#fff',
+  },
+  taggingListItem: {
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderBottomColor: '#e0e0e0',
+    borderBottomWidth: 1,
+  },
+  taggingListProfileBoxStyle: {
+    borderRadius: 50,
+    marginRight: 10,
+  },
+  taggingListItemTextView: {
+    flex: 1,
+    paddingVertical: 15,
+    gap: Platform.OS === 'ios' ? 5 : 0,
+  },
+  taggingListText: {fontSize: 14, color: '#000'},
+  taggingLoaderView: {paddingVertical: 20},
 });

@@ -4,20 +4,22 @@ import {
   Keyboard,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   RefreshControl,
-  SafeAreaView,
-  ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
-import React, {useCallback, useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {
   LMCommentItem,
   LMCommentUI,
   LMHeader,
   LMInputText,
   LMPost,
+  LMProfilePicture,
+  LMUserUI,
 } from '../../../LikeMinds-ReactNative-Feed-UI';
 import {useDispatch} from 'react-redux';
 import {
@@ -28,6 +30,7 @@ import {
   editCommentStateHandler,
   getComments,
   getPost,
+  getTaggingList,
   likeComment,
   refreshPostDetail,
   replyComment,
@@ -38,6 +41,7 @@ import {
   EditCommentRequest,
   GetCommentRequest,
   GetPostRequest,
+  GetTaggingListRequest,
   LikeCommentRequest,
   LikePostRequest,
   PinPostRequest,
@@ -46,7 +50,11 @@ import {
 } from '@likeminds.community/feed-js-beta';
 import {useAppSelector} from '../../store/store';
 import {NavigationService} from '../../navigation';
-import {LIKES_LIST, UNIVERSAL_FEED} from '../../constants/screenNames';
+import {
+  CREATE_POST,
+  LIKES_LIST,
+  UNIVERSAL_FEED,
+} from '../../constants/screenNames';
 import {postLikesClear} from '../../store/actions/postLikes';
 import {
   likePost,
@@ -62,6 +70,7 @@ import {
   COMMENT_TYPE,
   DELETE_COMMENT_MENU_ITEM,
   DELETE_POST_MENU_ITEM,
+  EDIT_POST_MENU_ITEM,
   EDIT_COMMENT_MENU_ITEM,
   NAVIGATED_FROM_COMMENT,
   PIN_POST_MENU_ITEM,
@@ -80,6 +89,15 @@ import LMLoader from '../../../LikeMinds-ReactNative-Feed-UI/src/base/LMLoader';
 import {TouchableOpacity} from 'react-native-gesture-handler';
 import {styles} from './styles';
 import Layout from '../../constants/Layout';
+import {FlashList} from '@shopify/flash-list';
+import {
+  detectMentions,
+  mentionToRouteConverter,
+  replaceLastMention,
+  routeToMentionConverter,
+} from '../../utils';
+import {SafeAreaView} from 'react-native-safe-area-context';
+import _ from 'lodash';
 
 interface IProps {
   navigation: object;
@@ -119,8 +137,24 @@ const PostDetail = (props: IProps) => {
     useState(showDeleteModal);
   const [keyboardIsVisible, setKeyboardIsVisible] = useState(false);
   const [editCommentFocus, setEditCommentFocus] = useState(false);
+  const myRef = useRef<TextInput>(null);
+  const [taggedUserName, setTaggedUserName] = useState('');
+  const [debounceTimeout, setDebounceTimeout] = useState<NodeJS.Timeout | null>(
+    null,
+  );
+  const [page, setPage] = useState(1);
+  const [userTaggingListHeight, setUserTaggingListHeight] =
+    useState<number>(116);
+  const [allTags, setAllTags] = useState<Array<LMUserUI>>([]);
+  const [isUserTagging, setIsUserTagging] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [localRefresh, setLocalRefresh] = useState(false);
+  const [commentFocus, setCommentFocus] = useState(false);
+  const [routeParams, setRouteParams] = useState(
+    props.route.params[1] === NAVIGATED_FROM_COMMENT,
+  );
+  const isKeyboardVisible = Keyboard.isVisible();
 
   // this function is executed on pull to refresh
   const onRefresh = useCallback(async () => {
@@ -138,7 +172,7 @@ const PostDetail = (props: IProps) => {
     );
     setLocalRefresh(false);
     setRefreshing(false);
-  }, [dispatch]);
+  }, [dispatch, props.route.params]);
 
   // this function closes the post action list modal
   const closePostActionListModal = () => {
@@ -164,6 +198,16 @@ const PostDetail = (props: IProps) => {
     );
     return postLikeResponse;
   }
+
+  // debounce on save post function
+  const debouncedFunction = _.debounce(savePostHandler, 500); // Adjust the debounce time (in milliseconds) as needed
+
+  // useEffect hook to clean up the debounced function
+  useEffect(() => {
+    return () => {
+      debouncedFunction.cancel(); // Cancel any pending debounced executions when the component unmounts
+    };
+  }, [debouncedFunction]);
 
   // this functions hanldes the post save functionality
   async function savePostHandler(id: string, saved?: boolean) {
@@ -235,6 +279,9 @@ const PostDetail = (props: IProps) => {
     if (itemId === DELETE_POST_MENU_ITEM) {
       handleDeletePost(true);
     }
+    if (itemId === EDIT_POST_MENU_ITEM) {
+      NavigationService.navigate(CREATE_POST, postId);
+    }
   };
 
   // this function handles the functionality on the report option of comment
@@ -262,7 +309,11 @@ const PostDetail = (props: IProps) => {
     }
     if (itemId === EDIT_COMMENT_MENU_ITEM) {
       const commentDetail = getCommentDetail(postDetail?.replies, commentId);
-      setCommentToAdd(commentDetail?.text ? commentDetail.text : '');
+      // converts the mentions route to mention values
+      const convertedComment = routeToMentionConverter(
+        commentDetail?.text ? commentDetail.text : '',
+      );
+      setCommentToAdd(convertedComment);
       setTimeout(() => {
         setEditCommentFocus(true);
       }, 100);
@@ -354,14 +405,19 @@ const PostDetail = (props: IProps) => {
 
   // this functions calls the add new comment api
   const addNewComment = async (postId: string) => {
+    // convert the mentions to route
+    const convertedNewComment = mentionToRouteConverter(commentToAdd);
     const currentDate = new Date();
     const payload = {
       postId: postId,
-      newComment: commentToAdd,
-      tempId: -currentDate.getTime(),
+      newComment: convertedNewComment,
+      tempId: `${-currentDate.getTime()}`,
     };
     setCommentToAdd('');
+    setCommentFocus(false);
+    // handles adding comment locally
     dispatch(addCommentStateHandler({payload, loggedInUser}) as any);
+    // calls new comment api
     const commentAddResponse = await dispatch(
       addComment(
         AddCommentRequest.builder()
@@ -376,15 +432,19 @@ const PostDetail = (props: IProps) => {
 
   // this functions calls the add new reply to a comment api
   const addNewReply = async (postId: string, commentId: string) => {
+    // convert the mentions to route
+    const convertedNewReply = mentionToRouteConverter(commentToAdd);
     const currentDate = new Date();
     const payload = {
       postId: postId,
-      newComment: commentToAdd,
-      tempId: -currentDate.getTime(),
+      newComment: convertedNewReply,
+      tempId: `${-currentDate.getTime()}`,
       commentId: commentId,
     };
     setCommentToAdd('');
+    setReplyOnComment({textInputFocus: false, commentId: ''});
     dispatch(replyCommentStateHandler({payload, loggedInUser}) as any);
+    // call reply on comment api
     const replyAddResponse = await dispatch(
       replyComment(
         ReplyCommentRequest.builder()
@@ -439,7 +499,7 @@ const PostDetail = (props: IProps) => {
           },
           saveButton: {
             onTap: () => {
-              savePostHandler(postDetail?.id, postDetail?.isSaved);
+              debouncedFunction(postDetail?.id, postDetail?.isSaved);
             },
           },
           likeTextButton: {
@@ -449,6 +509,11 @@ const PostDetail = (props: IProps) => {
                 POST_LIKES,
                 postDetail?.id,
               ]);
+            },
+          },
+          commentButton: {
+            onTap: () => {
+              setCommentFocus(true);
             },
           },
         }}
@@ -483,6 +548,13 @@ const PostDetail = (props: IProps) => {
       'keyboardDidHide',
       () => {
         setKeyboardIsVisible(false);
+        if (Keyboard.isVisible() === false) {
+          Keyboard.dismiss();
+          setReplyOnComment({textInputFocus: false, commentId: ''});
+          setEditCommentFocus(false);
+          setCommentFocus(false);
+          setRouteParams(false);
+        }
       },
     );
 
@@ -490,21 +562,24 @@ const PostDetail = (props: IProps) => {
       keyboardDidShowListener.remove();
       keyboardDidHideListener.remove();
     };
-  }, []);
+  }, [isKeyboardVisible]);
 
   // this function calls the edit comment api
   const commentEdit = async () => {
+    // convert the mentions to route
+    const convertedEditedComment = mentionToRouteConverter(commentToAdd);
     const payload = {
       commentId: selectedMenuItemCommentId,
-      commentText: commentToAdd,
+      commentText: convertedEditedComment,
     };
     await dispatch(editCommentStateHandler(payload) as any);
+    // call edit comment api
     const editCommentResponse = await dispatch(
       editComment(
         EditCommentRequest.builder()
           .setcommentId(selectedMenuItemCommentId)
           .setpostId(postDetail?.id)
-          .settext(commentToAdd)
+          .settext(payload.commentText)
           .build(),
       ) as any,
     );
@@ -515,8 +590,91 @@ const PostDetail = (props: IProps) => {
     return editCommentResponse;
   };
 
+  // this function is called on change text of textInput
+  const handleInputChange = async (event: string) => {
+    setCommentToAdd(event);
+
+    const newMentions = detectMentions(event);
+
+    if (newMentions.length > 0) {
+      const length = newMentions.length;
+      setTaggedUserName(newMentions[length - 1]);
+    }
+
+    // debouncing logic
+    if (debounceTimeout !== null) {
+      clearTimeout(debounceTimeout);
+    }
+
+    const mentionListLength = newMentions.length;
+    if (mentionListLength > 0) {
+      const timeoutID = setTimeout(async () => {
+        setPage(1);
+        const taggingListResponse = await dispatch(
+          getTaggingList(
+            GetTaggingListRequest.builder()
+              .setsearchName(newMentions[mentionListLength - 1])
+              .setpage(1)
+              .setpageSize(10)
+              .build(),
+          ) as any,
+        );
+        if (mentionListLength > 0) {
+          const tagsLength = taggingListResponse?.members?.length;
+          const arrLength = tagsLength;
+          if (arrLength >= 5) {
+            setUserTaggingListHeight(5 * 58);
+          } else if (arrLength < 5) {
+            const height = tagsLength * 100;
+            setUserTaggingListHeight(height);
+          }
+          setAllTags(taggingListResponse?.members);
+          setIsUserTagging(true);
+        }
+      }, 500);
+
+      setDebounceTimeout(timeoutID);
+    } else {
+      if (isUserTagging) {
+        setAllTags([]);
+        setIsUserTagging(false);
+      }
+    }
+  };
+
+  // this calls the tagging list api for different page number
+  const loadData = async (newPage: number) => {
+    setIsLoading(true);
+    const taggingListResponse = await dispatch(
+      getTaggingList(
+        GetTaggingListRequest.builder()
+          .setsearchName(taggedUserName)
+          .setpage(newPage)
+          .setpageSize(10)
+          .build(),
+      ) as any,
+    );
+    if (taggingListResponse) {
+      setAllTags([...allTags, ...taggingListResponse.members]);
+      setIsLoading(false);
+    }
+  };
+
+  // this handles the pagination of tagging list
+  const handleLoadMore = () => {
+    const userTaggingListLength = allTags.length;
+    if (!isLoading && userTaggingListLength > 0) {
+      // checking if conversations length is greater the 15 as it convered all the screen sizes of mobiles, and pagination API will never call if screen is not full messages.
+      if (userTaggingListLength >= 10 * page) {
+        const newPage = page + 1;
+        setPage(newPage);
+        loadData(newPage);
+      }
+    }
+  };
+
   return (
-    <SafeAreaView style={styles.flexView}>
+    <SafeAreaView edges={['left', 'right', 'top']} style={styles.flexView}>
       <KeyboardAvoidingView
         enabled={Platform.OS === 'android' ? true : false}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -545,142 +703,145 @@ const PostDetail = (props: IProps) => {
           }}
         />
         {/* post detail view */}
-        {postDetail?.id && (
+        {Object.keys(postDetail).length > 0 ? (
           <View
             style={StyleSheet.flatten([
               styles.mainContainer,
               {
-                paddingBottom: replyOnComment.textInputFocus
-                  ? Layout.normalize(74)
-                  : Layout.normalize(44),
+                paddingBottom:
+                  allTags && isUserTagging
+                    ? 0
+                    : replyOnComment.textInputFocus
+                    ? Layout.normalize(84)
+                    : Layout.normalize(54),
               },
             ])}>
-            {postDetail?.id ? (
-              <>
-                {/* this renders when the post has commentsCount greater than 0 */}
-                {postDetail?.commentsCount > 0 ? (
-                  <View>
-                    <FlatList
+            <>
+              {/* this renders when the post has commentsCount greater than 0 */}
+              <View>
+                <FlatList
+                  refreshing={refreshing}
+                  refreshControl={
+                    <RefreshControl
                       refreshing={refreshing}
-                      refreshControl={
-                        <RefreshControl
-                          refreshing={refreshing}
-                          onRefresh={onRefresh}
-                        />
-                      }
-                      keyboardShouldPersistTaps={'handled'}
-                      ListHeaderComponent={
-                        // this renders the post section
-                        <>
-                          {renderPostDetail()}
-                          <Text style={styles.commentCountText}>
-                            {postDetail.commentsCount > 1
-                              ? `${postDetail.commentsCount} Comments`
-                              : `${postDetail.commentsCount} Comment`}
-                          </Text>
-                        </>
-                      }
-                      data={postDetail?.replies}
-                      renderItem={({item}) => {
-                        // this renders the comments section
-                        return (
-                          <>
-                            {item && (
-                              <LMCommentItem
-                                comment={item}
-                                // this calls the getCommentsReplies function on click of number of child replies text
-                                onTapReplies={repliesResponseCallback => {
-                                  dispatch(clearComments(item?.id) as any);
-                                  getCommentsReplies(
-                                    item?.postId,
-                                    item?.id,
-                                    repliesResponseCallback,
-                                    1,
-                                  );
-                                }}
-                                // this handles the pagination of child replies on click of view more
-                                onTapViewMore={(
-                                  pageValue,
-                                  repliesResponseCallback,
-                                ) => {
-                                  getCommentsReplies(
-                                    item?.postId,
-                                    item?.id,
-                                    repliesResponseCallback,
-                                    pageValue,
-                                  );
-                                }}
-                                // this hanldes the functionality on click of reply text to add reply to an comment
-                                replyTextProps={{
-                                  onTap: () => {
-                                    setReplyOnComment({
-                                      textInputFocus: true,
-                                      commentId: item?.id,
-                                    });
-                                    setReplyToUsername(item?.user?.name);
-                                  },
-                                }}
-                                // view more text style
-                                viewMoreRepliesProps={{
-                                  text: '',
-                                  textStyle: styles.viewMoreText,
-                                }}
-                                // comment menu item props
-                                commentMenu={{
-                                  postId: item?.id,
-                                  menuItems: item?.menuItems,
-                                  modalPosition: modalPositionComment,
-                                  modalVisible: showCommentActionListModal,
-                                  onCloseModal: closeCommentActionListModal,
-                                  onSelected: (commentId, itemId) =>
-                                    onCommentMenuItemSelect(commentId, itemId),
-                                }}
-                                // this executes on click of like icon of comment
-                                likeIconButton={{
-                                  onTap: id => {
-                                    commentLikeHandler(item?.postId, id);
-                                  },
-                                }}
-                                // this executes on click of like text of comment
-                                likeTextButton={{
-                                  onTap: id =>
-                                    NavigationService.navigate(LIKES_LIST, [
-                                      COMMENT_LIKES,
-                                      id,
-                                      item?.postId,
-                                    ]),
-                                }}
-                              />
-                            )}
-                          </>
-                        );
-                      }}
-                      onEndReachedThreshold={0.3}
-                      onEndReached={() => {
-                        setCommentPageNumber(commentPageNumber + 1);
-                      }}
+                      onRefresh={onRefresh}
                     />
-                  </View>
-                ) : (
-                  // this section renders if the post has 0 comments
-                  <ScrollView keyboardShouldPersistTaps={'handled'}>
-                    {renderPostDetail()}
+                  }
+                  keyboardShouldPersistTaps={'handled'}
+                  ListHeaderComponent={
+                    // this renders the post section
+                    <>
+                      {renderPostDetail()}
+                      {postDetail?.commentsCount > 0 && (
+                        <Text style={styles.commentCountText}>
+                          {postDetail.commentsCount > 1
+                            ? `${postDetail.commentsCount} Comments`
+                            : `${postDetail.commentsCount} Comment`}
+                        </Text>
+                      )}
+                    </>
+                  }
+                  data={postDetail?.replies}
+                  renderItem={({item}) => {
+                    // this renders the comments section
+                    return (
+                      <>
+                        {item && (
+                          <LMCommentItem
+                            comment={item}
+                            // this calls the getCommentsReplies function on click of number of child replies text
+                            onTapReplies={repliesResponseCallback => {
+                              dispatch(clearComments(item?.id) as any);
+                              getCommentsReplies(
+                                item?.postId,
+                                item?.id,
+                                repliesResponseCallback,
+                                1,
+                              );
+                            }}
+                            // this handles the pagination of child replies on click of view more
+                            onTapViewMore={(
+                              pageValue,
+                              repliesResponseCallback,
+                            ) => {
+                              getCommentsReplies(
+                                item?.postId,
+                                item?.id,
+                                repliesResponseCallback,
+                                pageValue,
+                              );
+                            }}
+                            // this hanldes the functionality on click of reply text to add reply to an comment
+                            replyTextProps={{
+                              onTap: () => {
+                                setReplyOnComment({
+                                  textInputFocus: true,
+                                  commentId: item?.id,
+                                });
+                                setReplyToUsername(item?.user?.name);
+                              },
+                            }}
+                            // view more text style
+                            viewMoreRepliesProps={{
+                              text: '',
+                              textStyle: styles.viewMoreText,
+                            }}
+                            // comment menu item props
+                            commentMenu={{
+                              postId: item?.id,
+                              menuItems: item?.menuItems,
+                              modalPosition: modalPositionComment,
+                              modalVisible: showCommentActionListModal,
+                              onCloseModal: closeCommentActionListModal,
+                              onSelected: (commentId, itemId) =>
+                                onCommentMenuItemSelect(commentId, itemId),
+                            }}
+                            menuIcon={{
+                              onTap: () => {
+                                setReplyOnComment({
+                                  textInputFocus: false,
+                                  commentId: '',
+                                });
+                              },
+                            }}
+                            // this executes on click of like icon of comment
+                            likeIconButton={{
+                              onTap: id => {
+                                commentLikeHandler(item?.postId, id);
+                              },
+                            }}
+                            // this executes on click of like text of comment
+                            likeTextButton={{
+                              onTap: id =>
+                                NavigationService.navigate(LIKES_LIST, [
+                                  COMMENT_LIKES,
+                                  id,
+                                  item?.postId,
+                                ]),
+                            }}
+                          />
+                        )}
+                      </>
+                    );
+                  }}
+                  ListEmptyComponent={
                     <View style={styles.noCommentSection}>
                       <Text style={styles.noCommentText}>No comment found</Text>
                       <Text style={styles.lightGreyColorText}>
                         Be the first one to comment
                       </Text>
                     </View>
-                  </ScrollView>
-                )}
-              </>
-            ) : (
-              // this renders the loader until the data is fetched
-              <View style={styles.loaderView}>
-                {!localRefresh && <LMLoader />}
+                  }
+                  onEndReachedThreshold={0.3}
+                  onEndReached={() => {
+                    setCommentPageNumber(commentPageNumber + 1);
+                  }}
+                />
               </View>
-            )}
+            </>
           </View>
+        ) : (
+          <View style={styles.loaderView}>{!localRefresh && <LMLoader />}</View>
         )}
         {/* replying to username view which renders when the user is adding a reply to a comment */}
         {replyOnComment.textInputFocus && (
@@ -703,21 +864,90 @@ const PostDetail = (props: IProps) => {
             </TouchableOpacity>
           </View>
         )}
-        {/* text input section for comment */}
+        {/* users tagging list */}
+        {allTags && isUserTagging ? (
+          <View
+            style={[
+              styles.taggingListView,
+              {
+                paddingBottom: replyOnComment.textInputFocus
+                  ? Layout.normalize(84)
+                  : Layout.normalize(54),
+                height: userTaggingListHeight,
+              },
+            ]}>
+            <FlashList
+              data={[...allTags]}
+              renderItem={({item}: {item: LMUserUI}) => {
+                return (
+                  <Pressable
+                    onPress={() => {
+                      const uuid = item?.sdkClientInfo?.uuid;
+                      const res = replaceLastMention(
+                        commentToAdd,
+                        taggedUserName,
+                        item?.name,
+                        uuid ? `user_profile/${uuid}` : uuid,
+                      );
+                      setCommentToAdd(res);
+                      setAllTags([]);
+                      setIsUserTagging(false);
+                    }}
+                    style={styles.taggingListItem}>
+                    <LMProfilePicture
+                      fallbackText={item?.name}
+                      fallbackTextBoxStyle={styles.taggingListProfileBoxStyle}
+                      size={40}
+                    />
+
+                    <View style={styles.taggingListItemTextView}>
+                      <Text style={styles.taggingListText} numberOfLines={1}>
+                        {item?.name}
+                      </Text>
+                    </View>
+                  </Pressable>
+                );
+              }}
+              extraData={{
+                value: [commentToAdd, allTags],
+              }}
+              estimatedItemSize={75}
+              keyboardShouldPersistTaps={'handled'}
+              onEndReached={handleLoadMore}
+              onEndReachedThreshold={1}
+              bounces={false}
+              ListFooterComponent={
+                isLoading ? (
+                  <View style={styles.taggingLoaderView}>
+                    <LMLoader size={15} />
+                  </View>
+                ) : null
+              }
+              keyExtractor={(item: any, index) => {
+                return index?.toString();
+              }}
+            />
+          </View>
+        ) : null}
+
+        {/* input field */}
         <LMInputText
+          inputText={commentToAdd}
+          onType={handleInputChange}
           inputTextStyle={styles.textInputStyle}
           autoFocus={
-            props.route.params[1] === NAVIGATED_FROM_COMMENT
+            routeParams
               ? true
               : replyOnComment.textInputFocus
               ? true
               : editCommentFocus
+              ? true
+              : commentFocus
           }
           placeholderText="Write a comment"
           placeholderTextColor="#9B9B9B"
-          inputText={commentToAdd}
           disabled={postDetail?.id ? false : true}
-          onType={val => setCommentToAdd(val)}
+          inputRef={myRef}
           rightIcon={{
             onTap: () => {
               commentToAdd
@@ -735,6 +965,15 @@ const PostDetail = (props: IProps) => {
             },
             isClickable: commentToAdd ? false : true,
           }}
+          multilineField={true}
+          partTypes={[
+            {
+              trigger: '@', // Should be a single character like '@' or '#'
+              textStyle: {
+                color: 'blue',
+              }, // The mention style in the input
+            },
+          ]}
         />
       </KeyboardAvoidingView>
 
