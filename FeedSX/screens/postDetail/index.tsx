@@ -6,7 +6,6 @@ import {
   Platform,
   Pressable,
   RefreshControl,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -155,6 +154,7 @@ const PostDetail = (props: IProps) => {
   const [routeParams, setRouteParams] = useState(
     props.route.params[1] === NAVIGATED_FROM_COMMENT,
   );
+  const isKeyboardVisible = Keyboard.isVisible();
 
   // this function is executed on pull to refresh
   const onRefresh = useCallback(async () => {
@@ -207,7 +207,7 @@ const PostDetail = (props: IProps) => {
     return () => {
       debouncedFunction.cancel(); // Cancel any pending debounced executions when the component unmounts
     };
-  }, []);
+  }, [debouncedFunction]);
 
   // this functions hanldes the post save functionality
   async function savePostHandler(id: string, saved?: boolean) {
@@ -562,7 +562,7 @@ const PostDetail = (props: IProps) => {
       keyboardDidShowListener.remove();
       keyboardDidHideListener.remove();
     };
-  }, [Keyboard.isVisible()]);
+  }, [isKeyboardVisible]);
 
   // this function calls the edit comment api
   const commentEdit = async () => {

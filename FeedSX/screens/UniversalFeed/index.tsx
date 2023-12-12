@@ -258,7 +258,7 @@ const UniversalFeed = () => {
     return () => {
       debouncedFunction.cancel(); // Cancel any pending debounced executions when the component unmounts
     };
-  }, []);
+  }, [debouncedFunction]);
 
   // this functions hanldes the post save functionality
   async function savePostHandler(id: string, saved?: boolean) {
@@ -457,9 +457,9 @@ const UniversalFeed = () => {
               disabled={
                 item?.attachments &&
                 item?.attachments?.filter(
-                  item =>
-                    item?.attachmentType === IMAGE_ATTACHMENT_TYPE ||
-                    item?.attachmentType === VIDEO_ATTACHMENT_TYPE,
+                  media =>
+                    media?.attachmentType === IMAGE_ATTACHMENT_TYPE ||
+                    media?.attachmentType === VIDEO_ATTACHMENT_TYPE,
                 ).length >= 2
                   ? true
                   : false
