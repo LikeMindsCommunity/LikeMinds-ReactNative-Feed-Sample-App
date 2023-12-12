@@ -395,7 +395,7 @@ const CreatePost = (props: IProps) => {
   const postEdit = async () => {
     // replace mentions with route
     const contentText = mentionToRouteConverter(postContentText);
-    const linkAttachments = showLinkPreview ? formattedLinkAttachments : []
+    const linkAttachments = showLinkPreview ? formattedLinkAttachments : [];
     // call edit post api
     const editPostResponse = dispatch(
       editPost(
@@ -500,7 +500,8 @@ const CreatePost = (props: IProps) => {
   // this renders the post detail UI
   const uiRenderForPost = () => {
     return (
-      <ScrollView keyboardShouldPersistTaps={'handled'}
+      <ScrollView
+        keyboardShouldPersistTaps={'handled'}
         style={
           postToEdit
             ? styles.scrollViewStyleWithoutOptions

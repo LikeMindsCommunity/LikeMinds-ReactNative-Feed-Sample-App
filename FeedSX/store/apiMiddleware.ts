@@ -1,23 +1,25 @@
 import {Alert} from 'react-native';
 import {Middleware} from '@reduxjs/toolkit';
 import {START_LOADING, STOP_LOADING} from './types/loader';
-import { addEventListener } from '@react-native-community/netinfo';
+import {addEventListener} from '@react-native-community/netinfo';
 
 export const NETWORK_FAILED = 'Network request failed';
 
 type FuncType = (payload: any) => Promise<Response>;
-let netState = false
+let netState = false;
 async function invokeAPI(func: FuncType) {
   if (func === undefined) {
     return;
   }
   addEventListener(state => {
-    if(state.isConnected){
-      netState = true
+    if (state.isConnected) {
+      netState = true;
     }
-  })
+  });
   const response: any = await func;
-  return netState ? response?.data :  Alert.alert('', 'Please check your internet connection');
+  return netState
+    ? response?.data
+    : Alert.alert('', 'Please check your internet connection');
 }
 
 export const CALL_API = 'Call API';
@@ -39,7 +41,7 @@ const apiMiddleware: Middleware = () => next => async action => {
       next({type: START_LOADING});
     }
 
-    const responseBody = await invokeAPI(func);    
+    const responseBody = await invokeAPI(func);
 
     successType &&
       next({

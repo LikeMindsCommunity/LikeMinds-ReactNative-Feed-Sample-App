@@ -97,7 +97,7 @@ import {
   replaceLastMention,
   routeToMentionConverter,
 } from '../../utils';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import {SafeAreaView} from 'react-native-safe-area-context';
 import _ from 'lodash';
 
 interface IProps {
@@ -152,7 +152,9 @@ const PostDetail = (props: IProps) => {
   const [refreshing, setRefreshing] = useState(false);
   const [localRefresh, setLocalRefresh] = useState(false);
   const [commentFocus, setCommentFocus] = useState(false);
-  const [routeParams, setRouteParams] = useState(props.route.params[1] === NAVIGATED_FROM_COMMENT)
+  const [routeParams, setRouteParams] = useState(
+    props.route.params[1] === NAVIGATED_FROM_COMMENT,
+  );
 
   // this function is executed on pull to refresh
   const onRefresh = useCallback(async () => {
@@ -546,9 +548,9 @@ const PostDetail = (props: IProps) => {
       'keyboardDidHide',
       () => {
         setKeyboardIsVisible(false);
-        if(Keyboard.isVisible() === false) {
-          Keyboard.dismiss()
-          setReplyOnComment({textInputFocus:false, commentId:''})
+        if (Keyboard.isVisible() === false) {
+          Keyboard.dismiss();
+          setReplyOnComment({textInputFocus: false, commentId: ''});
           setEditCommentFocus(false);
           setCommentFocus(false);
           setRouteParams(false);
@@ -672,7 +674,7 @@ const PostDetail = (props: IProps) => {
   };
 
   return (
-    <SafeAreaView edges={['left', 'right', 'top']} style={styles.flexView} >
+    <SafeAreaView edges={['left', 'right', 'top']} style={styles.flexView}>
       <KeyboardAvoidingView
         enabled={Platform.OS === 'android' ? true : false}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -934,7 +936,7 @@ const PostDetail = (props: IProps) => {
           onType={handleInputChange}
           inputTextStyle={styles.textInputStyle}
           autoFocus={
-           routeParams
+            routeParams
               ? true
               : replyOnComment.textInputFocus
               ? true

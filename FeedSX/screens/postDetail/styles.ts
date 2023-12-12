@@ -68,7 +68,7 @@ export const styles = StyleSheet.create({
     color: '#222020',
     position: 'absolute',
     bottom: 0,
-    width: '100%'
+    width: '100%',
   },
   lightGreyColorText: {color: '#0F1E3D66'},
   taggingListView: {

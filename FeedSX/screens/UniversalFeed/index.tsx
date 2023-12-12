@@ -265,7 +265,7 @@ const UniversalFeed = () => {
     const payload = {
       postId: id,
     };
-    try {      
+    try {
       dispatch(savePostStateHandler(payload.postId) as any);
       // calling the save post api
       const savePostResponse = await dispatch(
@@ -453,12 +453,17 @@ const UniversalFeed = () => {
           }
           data={feedData}
           renderItem={({item}: {item: LMPostUI}) => (
-            <TouchableOpacity 
-            disabled={item?.attachments && item?.attachments?.filter(
-              item =>
-                item?.attachmentType === IMAGE_ATTACHMENT_TYPE ||
-                item?.attachmentType === VIDEO_ATTACHMENT_TYPE,
-            ).length >= 2 ? true : false}
+            <TouchableOpacity
+              disabled={
+                item?.attachments &&
+                item?.attachments?.filter(
+                  item =>
+                    item?.attachmentType === IMAGE_ATTACHMENT_TYPE ||
+                    item?.attachmentType === VIDEO_ATTACHMENT_TYPE,
+                ).length >= 2
+                  ? true
+                  : false
+              }
               activeOpacity={0.8}
               onPress={() => {
                 dispatch(clearPostDetail() as any);
