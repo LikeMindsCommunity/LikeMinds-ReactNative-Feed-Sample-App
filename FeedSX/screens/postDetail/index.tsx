@@ -98,6 +98,7 @@ import {
   routeToMentionConverter,
 } from '../../utils';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import _ from 'lodash';
 
 interface IProps {
   navigation: object;
@@ -151,6 +152,7 @@ const PostDetail = (props: IProps) => {
   const [refreshing, setRefreshing] = useState(false);
   const [localRefresh, setLocalRefresh] = useState(false);
   const [commentFocus, setCommentFocus] = useState(false);
+  const [routeParams, setRouteParams] = useState(props.route.params[1] === NAVIGATED_FROM_COMMENT)
 
   // this function is executed on pull to refresh
   const onRefresh = useCallback(async () => {
@@ -194,6 +196,16 @@ const PostDetail = (props: IProps) => {
     );
     return postLikeResponse;
   }
+
+  // debounce on save post function
+  const debouncedFunction = _.debounce(savePostHandler, 500); // Adjust the debounce time (in milliseconds) as needed
+
+  // useEffect hook to clean up the debounced function
+  useEffect(() => {
+    return () => {
+      debouncedFunction.cancel(); // Cancel any pending debounced executions when the component unmounts
+    };
+  }, []);
 
   // this functions hanldes the post save functionality
   async function savePostHandler(id: string, saved?: boolean) {
@@ -485,7 +497,7 @@ const PostDetail = (props: IProps) => {
           },
           saveButton: {
             onTap: () => {
-              savePostHandler(postDetail?.id, postDetail?.isSaved);
+              debouncedFunction(postDetail?.id, postDetail?.isSaved);
             },
           },
           likeTextButton: {
@@ -538,7 +550,8 @@ const PostDetail = (props: IProps) => {
           Keyboard.dismiss()
           setReplyOnComment({textInputFocus:false, commentId:''})
           setEditCommentFocus(false);
-          setCommentFocus(false)
+          setCommentFocus(false);
+          setRouteParams(false);
         }
       },
     );
@@ -921,7 +934,7 @@ const PostDetail = (props: IProps) => {
           onType={handleInputChange}
           inputTextStyle={styles.textInputStyle}
           autoFocus={
-            props.route.params[1] === NAVIGATED_FROM_COMMENT
+           routeParams
               ? true
               : replyOnComment.textInputFocus
               ? true

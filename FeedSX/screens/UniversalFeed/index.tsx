@@ -85,6 +85,7 @@ import {mentionToRouteConverter, uploadFilesToAWS} from '../../utils';
 import STYLES from '../../constants/Styles';
 import {showToastMessage} from '../../store/actions/toast';
 import {clearPostDetail} from '../../store/actions/postDetail';
+import _ from 'lodash';
 
 const UniversalFeed = () => {
   const dispatch = useDispatch();
@@ -249,12 +250,22 @@ const UniversalFeed = () => {
     return postLikeResponse;
   }
 
+  // debounce on save post function
+  const debouncedFunction = _.debounce(savePostHandler, 500); // Adjust the debounce time (in milliseconds) as needed
+
+  // useEffect hook to clean up the debounced function
+  useEffect(() => {
+    return () => {
+      debouncedFunction.cancel(); // Cancel any pending debounced executions when the component unmounts
+    };
+  }, []);
+
   // this functions hanldes the post save functionality
   async function savePostHandler(id: string, saved?: boolean) {
     const payload = {
       postId: id,
     };
-    try {
+    try {      
       dispatch(savePostStateHandler(payload.postId) as any);
       // calling the save post api
       const savePostResponse = await dispatch(
@@ -489,7 +500,7 @@ const UniversalFeed = () => {
                   },
                   saveButton: {
                     onTap: () => {
-                      savePostHandler(item?.id, item?.isSaved);
+                      debouncedFunction(item?.id, item?.isSaved);
                     },
                   },
                   likeTextButton: {
@@ -546,7 +557,7 @@ const UniversalFeed = () => {
       {/* create post button section */}
       <TouchableOpacity
         activeOpacity={0.8}
-        disabled={feedData.length > 0 ? false : true}
+        disabled={feedData?.length > 0 ? false : true}
         style={[
           styles.newPostButtonView,
           showCreatePost
