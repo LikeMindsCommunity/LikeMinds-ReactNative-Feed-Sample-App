@@ -10,7 +10,7 @@ import {LMFeedClient} from '@likeminds.community/feed-js';
 export const lmFeedClient = LMFeedClient.Builder()
   .setApiKey('')
   .setPlatformCode('rn')
-  .setVersionCode(2)
+  .setVersionCode(3)
   .build();
 
 AppRegistry.registerComponent(appName, () => App);
