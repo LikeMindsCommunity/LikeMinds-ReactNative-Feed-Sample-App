@@ -1,5 +1,3 @@
-import LMToast from "./LMToast";
+import LMToast from './LMToast';
 
-export {
-    LMToast
-}
+export {LMToast};

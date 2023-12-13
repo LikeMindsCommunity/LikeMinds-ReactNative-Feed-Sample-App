@@ -22,7 +22,7 @@ jobs:
       # ESLint and Prettier must be in `package.json`
       - name: ESLint
         run: npm run eslint
-  
+
   run-prettier:
     name: Prettier
     runs-on: ubuntu-latest
@@ -38,8 +38,6 @@ jobs:
 
       - name: Install Node.js dependencies
         run: npm i
-        
+
       - name: Prettier
         run: npm run prettier
-
-      

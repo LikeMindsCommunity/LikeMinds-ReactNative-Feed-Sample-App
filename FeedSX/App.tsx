@@ -1,11 +1,5 @@
-import React, {useEffect, useState} from 'react';
-import {
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-  Text,
-  View,
-} from 'react-native';
+import React from 'react';
+import {KeyboardAvoidingView, Platform, StyleSheet} from 'react-native';
 import {Provider as ReduxProvider} from 'react-redux';
 import store from './store/store';
 import SwitchComponent from './navigation/SwitchComponent';
@@ -15,11 +9,16 @@ function App(): JSX.Element {
     <ReduxProvider store={store}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={{flex: 1}}>
-            <SwitchComponent />
+        style={styles.mainContainer}>
+        <SwitchComponent />
       </KeyboardAvoidingView>
     </ReduxProvider>
   );
 }
 
+const styles = StyleSheet.create({
+  mainContainer: {
+    flex: 1,
+  },
+});
 export default App;
