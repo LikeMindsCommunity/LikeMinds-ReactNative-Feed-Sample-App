@@ -1,5 +1,5 @@
 import {View, Text, Modal, Pressable} from 'react-native';
-import React, {useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 import styles from './styles';
 import {useDispatch} from 'react-redux';
 import {getReportTags} from '../../store/actions/feed';
@@ -15,37 +15,42 @@ interface DeleteReasonsModalProps {
   closeModal: () => void;
   selectedReason: (value: string) => void;
   handleDeleteModal: (value: boolean) => void;
-  modalBackdropColor?: string
+  modalBackdropColor?: string;
 }
 
-const DeleteReasonsModal = ({visible, closeModal, selectedReason, handleDeleteModal, modalBackdropColor}: DeleteReasonsModalProps) => {
-
+const DeleteReasonsModal = ({
+  visible,
+  closeModal,
+  selectedReason,
+  handleDeleteModal,
+  modalBackdropColor,
+}: DeleteReasonsModalProps) => {
   const dispatch = useDispatch();
   const [selectedIndex, setSelectedIndex] = useState<number>(-1);
   const deleteTags = useAppSelector(state => state.feed.reportTags);
 
   // this function calls the get reason tags api for deletion
-  const fetchReasonTags = async () => {
-    let payload = {
+  const fetchReasonTags = useCallback(async () => {
+    const payload = {
       type: DELETE_TAGS_TYPE, // type 0 for delete reason tags
     };
-    let reportTagsResponse = await dispatch(
+    const reportTagsResponse = await dispatch(
       getReportTags(
         GetReportTagsRequest.builder().settype(payload.type).build(),
       ) as any,
     );
     return reportTagsResponse;
-  };
+  }, [dispatch]);
 
   // this calls the fetchReportTags api when the modal gets visible
   useEffect(() => {
     if (visible) {
       fetchReasonTags();
     }
-  }, [visible]);
+  }, [visible, fetchReasonTags]);
 
   // this is the callback function that takes the selected reason tag to the delete modal
-  const reasonSelection = (selectedId: any) => {
+  const reasonSelection = (selectedId: string) => {
     selectedReason(selectedId);
     setSelectedIndex(-1);
     handleDeleteModal(true);
@@ -94,12 +99,11 @@ const DeleteReasonsModal = ({visible, closeModal, selectedReason, handleDeleteMo
                         <View
                           style={[
                             styles.selectedReasonBtn,
-                            {
-                              backgroundColor:
-                                index == selectedIndex ? '#919191' : 'white',
-                              borderColor: '#919191',
-                            },
-                          ]}></View>
+                            index === selectedIndex
+                              ? styles.selectedReasonView
+                              : styles.defaultReasonView,
+                          ]}
+                        />
                       </View>
                     </View>
 
