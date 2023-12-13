@@ -4,7 +4,7 @@ import {FlashList} from '@shopify/flash-list';
 import {
   GetCommentLikesRequest,
   GetPostLikesRequest,
-} from '@likeminds.community/feed-js-beta';
+} from '@likeminds.community/feed-js';
 import {commentLikes, postLikes} from '../../store/actions/postLikes';
 import {useDispatch} from 'react-redux';
 import {useAppSelector} from '../../store/store';

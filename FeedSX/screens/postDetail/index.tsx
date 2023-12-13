@@ -47,7 +47,7 @@ import {
   PinPostRequest,
   ReplyCommentRequest,
   SavePostRequest,
-} from '@likeminds.community/feed-js-beta';
+} from '@likeminds.community/feed-js';
 import {useAppSelector} from '../../store/store';
 import {NavigationService} from '../../navigation';
 import {

@@ -61,7 +61,7 @@ import {
   EditPostRequest,
   GetPostRequest,
   GetTaggingListRequest,
-} from '@likeminds.community/feed-js-beta';
+} from '@likeminds.community/feed-js';
 import _ from 'lodash';
 import {
   editPost,

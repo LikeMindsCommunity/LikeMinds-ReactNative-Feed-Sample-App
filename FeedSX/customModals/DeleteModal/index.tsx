@@ -14,7 +14,7 @@ import {deletePost, deletePostStateHandler} from '../../store/actions/feed';
 import {
   DeleteCommentRequest,
   DeletePostRequest,
-} from '@likeminds.community/feed-js-beta';
+} from '@likeminds.community/feed-js';
 import {useAppSelector} from '../../store/store';
 import DeleteReasonsModal from '../DeleteReasonsModal';
 import {showToastMessage} from '../../store/actions/toast';
