@@ -20,7 +20,7 @@ import {
   LikePostRequest,
   PinPostRequest,
   SavePostRequest,
-} from '@likeminds.community/feed-js-beta';
+} from '@likeminds.community/feed-js';
 import {useDispatch} from 'react-redux';
 import {
   autoPlayPostVideo,

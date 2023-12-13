@@ -15,7 +15,7 @@ import {getReportTags, postReport} from '../../store/actions/feed';
 import {
   GetReportTagsRequest,
   PostReportRequest,
-} from '@likeminds.community/feed-js-beta';
+} from '@likeminds.community/feed-js';
 import {useAppSelector} from '../../store/store';
 import {
   COMMENT_REPORTED_SUCCESSFULLY,
