@@ -4,7 +4,7 @@ import {Provider as ReduxProvider} from 'react-redux';
 import store from './store/store';
 import SwitchComponent from './navigation/SwitchComponent';
 
-function App(): JSX.Element {
+function LMFeedApp(): JSX.Element {
   return (
     <ReduxProvider store={store}>
       <KeyboardAvoidingView
@@ -21,4 +21,4 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 });
-export default App;
+export default LMFeedApp;
