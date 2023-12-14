@@ -14,7 +14,7 @@ import {
   LMMemberListItem,
 } from '../../../LikeMinds-ReactNative-Feed-UI';
 import {NavigationService} from '../../navigation';
-import LMLoader from '../../../LikeMinds-ReactNative-Feed-UI/src/base/LMLoader';
+import {LMLoader} from '../../../LikeMinds-ReactNative-Feed-UI';
 import {COMMENT_LIKES, POST_LIKES} from '../../constants/Strings';
 import {styles} from './styles';
 

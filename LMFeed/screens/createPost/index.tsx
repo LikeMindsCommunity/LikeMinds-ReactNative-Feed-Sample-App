@@ -78,7 +78,7 @@ import {
 } from '../../viewDataModels';
 import {styles} from './styles';
 import {showToastMessage} from '../../store/actions/toast';
-import LMLoader from '../../../LikeMinds-ReactNative-Feed-UI/src/base/LMLoader';
+import {LMLoader} from '../../../LikeMinds-ReactNative-Feed-UI';
 import {getPost, getTaggingList} from '../../store/actions/postDetail';
 import {FlashList} from '@shopify/flash-list';
 

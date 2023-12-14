@@ -73,7 +73,7 @@ import {
   VIDEO_ATTACHMENT_TYPE,
 } from '../../constants/Strings';
 import {DeleteModal, ReportModal} from '../../customModals';
-import LMLoader from '../../../LikeMinds-ReactNative-Feed-UI/src/base/LMLoader';
+import {LMLoader} from '../../../LikeMinds-ReactNative-Feed-UI';
 import {postLikesClear} from '../../store/actions/postLikes';
 import {setUploadAttachments, addPost} from '../../store/actions/createPost';
 import {
@@ -86,7 +86,7 @@ import STYLES from '../../constants/Styles';
 import {showToastMessage} from '../../store/actions/toast';
 import {clearPostDetail} from '../../store/actions/postDetail';
 import _ from 'lodash';
-import { Credentials } from '../../credentials';
+import {Credentials} from '../../credentials';
 
 const UniversalFeed = () => {
   const dispatch = useDispatch();

@@ -18,7 +18,7 @@ const SwitchComponent = () => {
 
   return (
     <>
-      <NavigationContainer ref={navigationRef}>
+      <NavigationContainer ref={navigationRef} independent={true}>
         <Stack.Navigator screenOptions={{headerShown: false}}>
           <Stack.Screen name={UNIVERSAL_FEED} component={UniversalFeed} />
           <Stack.Screen name={LIKES_LIST} component={LikesList} />

@@ -7,7 +7,7 @@ import {GetReportTagsRequest} from '@likeminds.community/feed-js';
 import {useAppSelector} from '../../store/store';
 import STYLES from '../../constants/Styles';
 import {DELETE_TAGS_TYPE, DELETION_REASON} from '../../constants/Strings';
-import LMLoader from '../../../LikeMinds-ReactNative-Feed-UI/src/base/LMLoader';
+import {LMLoader} from '../../../LikeMinds-ReactNative-Feed-UI';
 
 // delete reason's modal props
 interface DeleteReasonsModalProps {
