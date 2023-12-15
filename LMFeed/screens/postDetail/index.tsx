@@ -85,7 +85,7 @@ import {
   UNPIN_POST_MENU_ITEM,
 } from '../../constants/Strings';
 import {DeleteModal, ReportModal} from '../../customModals';
-import LMLoader from '../../../LikeMinds-ReactNative-Feed-UI/src/base/LMLoader';
+import {LMLoader} from '../../../LikeMinds-ReactNative-Feed-UI';
 import {TouchableOpacity} from 'react-native-gesture-handler';
 import {styles} from './styles';
 import Layout from '../../constants/Layout';

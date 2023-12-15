@@ -4,7 +4,7 @@
 
 import {AppRegistry} from 'react-native';
 import {name as appName} from './app.json';
-import App from './FeedSX/App';
+import App from './LMFeed/App';
 import {LMFeedClient} from '@likeminds.community/feed-js';
 
 export const lmFeedClient = LMFeedClient.Builder()

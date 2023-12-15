@@ -73,7 +73,7 @@ import {
   VIDEO_ATTACHMENT_TYPE,
 } from '../../constants/Strings';
 import {DeleteModal, ReportModal} from '../../customModals';
-import LMLoader from '../../../LikeMinds-ReactNative-Feed-UI/src/base/LMLoader';
+import {LMLoader} from '../../../LikeMinds-ReactNative-Feed-UI';
 import {postLikesClear} from '../../store/actions/postLikes';
 import {setUploadAttachments, addPost} from '../../store/actions/createPost';
 import {
@@ -86,6 +86,7 @@ import STYLES from '../../constants/Styles';
 import {showToastMessage} from '../../store/actions/toast';
 import {clearPostDetail} from '../../store/actions/postDetail';
 import _ from 'lodash';
+import {Credentials} from '../../credentials';
 
 const UniversalFeed = () => {
   const dispatch = useDispatch();
@@ -120,8 +121,8 @@ const UniversalFeed = () => {
     const UUID = '0e53748a-969b-44c6-b8fa-a4c8e1eb1208';
 
     const payload = {
-      userUniqueId: UUID, // user unique ID
-      userName: 'abc', // user name
+      userUniqueId: Credentials.userUniqueId, // user unique ID
+      userName: Credentials.username, // user name
       isGuest: false,
     };
 
