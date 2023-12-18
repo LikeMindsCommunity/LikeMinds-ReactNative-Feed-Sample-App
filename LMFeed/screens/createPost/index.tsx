@@ -62,6 +62,7 @@ import {
   GetPostRequest,
   GetTaggingListRequest,
 } from '@likeminds.community/feed-js';
+// @ts-ignore the lib do not have TS declarations yet
 import _ from 'lodash';
 import {
   editPost,

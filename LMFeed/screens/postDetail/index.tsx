@@ -97,6 +97,7 @@ import {
   routeToMentionConverter,
 } from '../../utils';
 import {SafeAreaView} from 'react-native-safe-area-context';
+// @ts-ignore the lib do not have TS declarations yet
 import _ from 'lodash';
 
 interface IProps {
