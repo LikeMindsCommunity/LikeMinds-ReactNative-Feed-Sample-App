@@ -85,6 +85,7 @@ import {mentionToRouteConverter, uploadFilesToAWS} from '../../utils';
 import STYLES from '../../constants/Styles';
 import {showToastMessage} from '../../store/actions/toast';
 import {clearPostDetail} from '../../store/actions/postDetail';
+// @ts-ignore the lib do not have TS declarations yet
 import _ from 'lodash';
 import {Credentials} from '../../credentials';
 
