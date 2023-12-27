@@ -109,18 +109,13 @@ const UniversalFeed = () => {
   const [showCreatePost, setShowCreatePost] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [localRefresh, setLocalRefresh] = useState(false);
-
+  const [feedFetching, setFeedFetching] = useState(false);
   const uploadingMediaAttachmentType = mediaAttachmemnts[0]?.attachmentType;
   const uploadingMediaAttachment = mediaAttachmemnts[0]?.attachmentMeta.url;
   const listRef = useRef<FlashList<LMPostUI>>(null);
 
   // this function calls initiate user API and sets the access token and community id
   const getInitialData = useCallback(async () => {
-    //this line of code is for the sample app only, pass your userUniqueID instead of this.
-    // todo: remove static data
-    // const UUID = await AsyncStorage.getItem('userUniqueID');
-    const UUID = '0e53748a-969b-44c6-b8fa-a4c8e1eb1208';
-
     const payload = {
       userUniqueId: Credentials.userUniqueId, // user unique ID
       userName: Credentials.username, // user name
@@ -153,6 +148,7 @@ const UniversalFeed = () => {
           .build(),
       ) as any,
     );
+    setFeedFetching(false);
     return getFeedResponse;
   }, [dispatch, feedPageNumber]);
 
@@ -296,10 +292,14 @@ const UniversalFeed = () => {
     getInitialData();
   }, [getInitialData]);
 
+  useEffect(() => {
+    setFeedFetching(true);
+  }, []);
   // this calls the getFeed api whenever the page number gets changed
   useEffect(() => {
     if (accessToken) {
       // fetch feed
+
       fetchFeed();
       // handles members right
       if (memberData?.state !== 1) {
@@ -446,125 +446,129 @@ const UniversalFeed = () => {
         </View>
       )}
       {/* posts list section */}
-      {feedData?.length > 0 ? (
-        <FlashList
-          ref={listRef}
-          refreshing={refreshing}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
-          data={feedData}
-          renderItem={({item}: {item: LMPostUI}) => (
-            <TouchableOpacity
-              disabled={
-                item?.attachments &&
-                item?.attachments?.filter(
-                  media =>
-                    media?.attachmentType === IMAGE_ATTACHMENT_TYPE ||
-                    media?.attachmentType === VIDEO_ATTACHMENT_TYPE,
-                ).length >= 2
-                  ? true
-                  : false
-              }
-              activeOpacity={0.8}
-              onPress={() => {
-                dispatch(clearPostDetail() as any);
-                NavigationService.navigate(POST_DETAIL, [
-                  item?.id,
-                  NAVIGATED_FROM_POST,
-                ]);
-              }}>
-              <LMPost
-                post={item}
-                // header props
-                headerProps={{
-                  post: item,
-                  postMenu: {
-                    postId: item?.id,
-                    menuItems: item?.menuItems,
-                    modalPosition: modalPosition,
-                    modalVisible: showActionListModal,
-                    onCloseModal: closePostActionListModal,
-                    onSelected: (postId, itemId) =>
-                      onMenuItemSelect(postId, itemId, item?.isPinned),
-                  },
-                  onTap: () => {},
-                  showMenuIcon: true,
-                  showMemberStateLabel: true,
-                }}
-                // footer props
-                footerProps={{
-                  isLiked: item?.isLiked,
-                  isSaved: item?.isSaved,
-                  likesCount: item?.likesCount,
-                  commentsCount: item?.commentsCount,
-                  showBookMarkIcon: true,
-                  showShareIcon: true,
-                  likeIconButton: {
-                    onTap: () => {
-                      postLikeHandler(item?.id);
-                    },
-                  },
-                  saveButton: {
-                    onTap: () => {
-                      debouncedFunction(item?.id, item?.isSaved);
-                    },
-                  },
-                  likeTextButton: {
-                    onTap: () => {
-                      dispatch(postLikesClear() as any);
-                      NavigationService.navigate(LIKES_LIST, [
-                        POST_LIKES,
-                        item?.id,
-                      ]);
-                    },
-                  },
-                  commentButton: {
-                    onTap: () => {
-                      dispatch(clearPostDetail() as any);
-                      NavigationService.navigate(POST_DETAIL, [
-                        item?.id,
-                        NAVIGATED_FROM_COMMENT,
-                      ]);
-                    },
-                  },
-                }}
-                mediaProps={{
-                  attachments: item?.attachments ? item.attachments : [],
-                  videoProps: {videoUrl: '', showControls: true},
-                  carouselProps: {
-                    attachments: item?.attachments ? item.attachments : [],
-                    videoItem: {videoUrl: '', showControls: true},
-                  },
-                }}
-              />
-            </TouchableOpacity>
-          )}
-          keyExtractor={item => keyExtractor(item)}
-          estimatedItemSize={500}
-          onEndReachedThreshold={0.3}
-          onEndReached={() => {
-            setFeedPageNumber(feedPageNumber + 1);
-          }}
-          ListFooterComponent={<>{showLoader > 0 && renderLoader()}</>}
-          onViewableItemsChanged={({changed, viewableItems}) => {
-            if (changed) {
-              if (viewableItems) {
-                dispatch(
-                  autoPlayPostVideo(viewableItems?.[0]?.item?.id) as any,
-                );
-              }
+      {!feedFetching ? (
+        feedData?.length > 0 ? (
+          <FlashList
+            ref={listRef}
+            refreshing={refreshing}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
             }
-          }}
-          viewabilityConfig={{viewAreaCoveragePercentThreshold: 60}}
-        />
+            data={feedData}
+            renderItem={({item}: {item: LMPostUI}) => (
+              <TouchableOpacity
+                disabled={
+                  item?.attachments &&
+                  item?.attachments?.filter(
+                    media =>
+                      media?.attachmentType === IMAGE_ATTACHMENT_TYPE ||
+                      media?.attachmentType === VIDEO_ATTACHMENT_TYPE,
+                  ).length >= 2
+                    ? true
+                    : false
+                }
+                activeOpacity={0.8}
+                onPress={() => {
+                  dispatch(clearPostDetail() as any);
+                  NavigationService.navigate(POST_DETAIL, [
+                    item?.id,
+                    NAVIGATED_FROM_POST,
+                  ]);
+                }}>
+                <LMPost
+                  post={item}
+                  // header props
+                  headerProps={{
+                    post: item,
+                    postMenu: {
+                      postId: item?.id,
+                      menuItems: item?.menuItems,
+                      modalPosition: modalPosition,
+                      modalVisible: showActionListModal,
+                      onCloseModal: closePostActionListModal,
+                      onSelected: (postId, itemId) =>
+                        onMenuItemSelect(postId, itemId, item?.isPinned),
+                    },
+                    onTap: () => {},
+                    showMenuIcon: true,
+                    showMemberStateLabel: true,
+                  }}
+                  // footer props
+                  footerProps={{
+                    isLiked: item?.isLiked,
+                    isSaved: item?.isSaved,
+                    likesCount: item?.likesCount,
+                    commentsCount: item?.commentsCount,
+                    showBookMarkIcon: true,
+                    showShareIcon: true,
+                    likeIconButton: {
+                      onTap: () => {
+                        postLikeHandler(item?.id);
+                      },
+                    },
+                    saveButton: {
+                      onTap: () => {
+                        debouncedFunction(item?.id, item?.isSaved);
+                      },
+                    },
+                    likeTextButton: {
+                      onTap: () => {
+                        dispatch(postLikesClear() as any);
+                        NavigationService.navigate(LIKES_LIST, [
+                          POST_LIKES,
+                          item?.id,
+                        ]);
+                      },
+                    },
+                    commentButton: {
+                      onTap: () => {
+                        dispatch(clearPostDetail() as any);
+                        NavigationService.navigate(POST_DETAIL, [
+                          item?.id,
+                          NAVIGATED_FROM_COMMENT,
+                        ]);
+                      },
+                    },
+                  }}
+                  mediaProps={{
+                    attachments: item?.attachments ? item.attachments : [],
+                    videoProps: {videoUrl: '', showControls: true},
+                    carouselProps: {
+                      attachments: item?.attachments ? item.attachments : [],
+                      videoItem: {videoUrl: '', showControls: true},
+                    },
+                  }}
+                />
+              </TouchableOpacity>
+            )}
+            keyExtractor={item => keyExtractor(item)}
+            estimatedItemSize={500}
+            onEndReachedThreshold={0.3}
+            onEndReached={() => {
+              setFeedPageNumber(feedPageNumber + 1);
+            }}
+            ListFooterComponent={<>{showLoader > 0 && renderLoader()}</>}
+            onViewableItemsChanged={({changed, viewableItems}) => {
+              if (changed) {
+                if (viewableItems) {
+                  dispatch(
+                    autoPlayPostVideo(viewableItems?.[0]?.item?.id) as any,
+                  );
+                }
+              }
+            }}
+            viewabilityConfig={{viewAreaCoveragePercentThreshold: 60}}
+          />
+        ) : (
+          <View style={styles.noDataView}><Text>No Post</Text></View>
+        )
       ) : (
         <View style={styles.loaderView}>{!localRefresh && <LMLoader />}</View>
       )}
       {/* create post button section */}
       <TouchableOpacity
         activeOpacity={0.8}
-        disabled={feedData?.length > 0 ? false : true}
+        disabled={feedData?.length >= 0 ? false : true}
         style={[
           styles.newPostButtonView,
           showCreatePost
