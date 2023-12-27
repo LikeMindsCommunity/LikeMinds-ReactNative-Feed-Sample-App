@@ -63,6 +63,12 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 30,
   },
+  noDataView: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems:'center',
+    marginBottom: 30,
+  },
   newPostButtonEnable: {
     opacity: 1,
   },
